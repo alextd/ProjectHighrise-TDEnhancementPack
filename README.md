@@ -15,3 +15,4 @@ To develop code:
 -- Use Assembly Publicizer: https://github.com/CabbageCrow/AssemblyPublicizer
 -- Turn: Project Highrise/Game_Data/Managed/Assembly-CSharp.dll
 -- Into: BetterPlacement/Libs/publicized_assemblies/Assembly-CSharp_publicized.dll
+- Recommended, set the Debug start exe to Project Highrise exe.
