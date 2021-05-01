@@ -15,10 +15,11 @@ namespace BetterPlacement
 		// Awake is called once when both the game and the plug-in are loaded
 		void Awake()
 		{
+			Log.logger = Logger;
 #if DEBUG
 			HarmonyFileLog.Enabled = true;
 #endif
-			Log.logger = Logger;
+			Log.Message($"Wake up! Time is: {DateTime.Now}");
 			new Harmony("TD.ProjectHighrise.BetterPlacement.main").PatchAll();
 		}
 	}
