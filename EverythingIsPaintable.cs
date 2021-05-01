@@ -66,4 +66,25 @@ namespace BetterPlacement
 				PlayPaintSoundInfo.Invoke(instance, new object[] { success });
 		}
 	}
+
+	[HarmonyPatch(typeof(AbstractPaintInputMode), nameof(AbstractPaintInputMode.DoMouseUp))]
+	public static class MouseUpDragging
+	{
+		//protected override void DoMouseUp(Vector2 scrpos, bool wasDragging)
+		public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+		{
+			MethodInfo TryPaintInfo = AccessTools.Method(typeof(AbstractPaintInputMode), nameof(AbstractPaintInputMode.TryPaint));
+
+			foreach (var inst in instructions)
+			{
+				if (inst.Calls(TryPaintInfo))
+				{
+					//TryPaint(false) => TryPaint(wasDragging)
+					yield return new CodeInstruction(OpCodes.Pop);
+					yield return new CodeInstruction(OpCodes.Ldarg_2);//wasDragging
+				}
+				yield return inst;
+			}
+		}
+	}
 }
