@@ -92,7 +92,8 @@ namespace BetterPlacement
 			int buildCount = cellCount / buyMode.Width();
 			if (buildCount == 0)
 				return false;
-			result.startLeft = true;//TODO
+			result.startLeft = (buyMode._cursorpos.x - result.left.pos.x) < (result.right.pos.x - buyMode._cursorpos.x);
+
 			Log.Debug($"CanPaintWholeFloor: {result.left.pos.x}-{result.right.pos.x} fits {buildCount}");
 			return result;
 		}
@@ -107,15 +108,17 @@ namespace BetterPlacement
 
 		public static void PayAndPaintWholeFloor(this BuyEntityInputMode buyMode, WholeFloorSize wholeFloor)
 		{
-			int numPossible = (wholeFloor.right.pos.x - wholeFloor.left.pos.x + 1) / buyMode.Width();
+			int width = buyMode.Width();
+			int numPossible = (wholeFloor.right.pos.x - wholeFloor.left.pos.x + 1) / width;
 			Game.Game.ctx.sim.player.DoAdd(buyMode.GetBuyCost() * numPossible, Reason.BuildCost, (GridPosF)buyMode._cursorpos);
 
 			GridPos cursorPos = buyMode._cursorpos;//The left side of the mouse-placement unit. Good enough to use.
 			VfxUtil.MaybeSpawnBuildFx(buyMode._cursor.config, cursorPos);
 
 			Log.Debug($"PayAndPaintWholeFloor: {wholeFloor.left.pos.x}-{wholeFloor.right.pos.x} fits {numPossible} costs {buyMode.GetBuyCost() * numPossible}");
-			//todo:use wholeFloor.startLeft
-			for (GridPos buildPos = wholeFloor.left.pos; buildPos.x + buyMode.Width()-1 <= wholeFloor.right.pos.x; buildPos.x += buyMode.Width())
+			for (GridPos buildPos = wholeFloor.startLeft ? wholeFloor.left.pos : new GridPos(wholeFloor.right.pos.x - width + 1, wholeFloor.right.pos.y);
+				buildPos.x + width - 1 <= wholeFloor.right.pos.x && buildPos.x >= wholeFloor.left.pos.x;
+				buildPos.x += wholeFloor.startLeft ? width:-width)
 			{
 				Log.Debug($"Building at {buildPos}");
 				GridCell buildCell = Game.Game.ctx.board.grid.FindGridCell(buildPos);
