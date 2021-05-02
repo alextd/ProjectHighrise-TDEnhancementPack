@@ -38,7 +38,6 @@ namespace BetterPlacement
 				if (KeyboardShortcutManager.shift)
 				{
 					__instance.UpdateCursorPosition(scrpos);
-					Log.Debug("Doing TryPaintWholeFloor!");
 					TryPaintWholeFloor(buyMode, dragging: false);
 					return false;
 				}
@@ -69,7 +68,6 @@ namespace BetterPlacement
 			}
 			else
 			{
-				Log.Debug("Failed PaintWholeFloor");
 				buyMode.OnFailedPaint(dragging);
 			}
 			if (!dragging)
@@ -80,31 +78,37 @@ namespace BetterPlacement
 
 		public static WholeFloorSize CanPaintWholeFloor(this BuyEntityInputMode buyMode)
 		{
-			Log.Debug("CanPaintWholeFloor?");
-			GridCell gridCell = Game.Game.ctx.board.grid.FindGridCellOrNull(buyMode._cursorpos);
-			if (!gridCell.IsEmptyFloor())
-				return false;
+			for (GridPos checkPos = buyMode._cursorpos; checkPos.x < buyMode._cursorpos.x + buyMode.Width(); checkPos.x+=1)
+			{
+				GridCell gridCell = Game.Game.ctx.board.grid.FindGridCellOrNull(checkPos);
+				if (!gridCell.IsEmptyFloor())
+					return false;
+			}
 
 			WholeFloorSize result = true;
-			result.left = FindEnd(gridCell, -1);
-			result.right = FindEnd(gridCell, 1);
+			result.left = FindEnd(buyMode._cursorpos, -1);
+			result.right = FindEnd(buyMode._cursorpos, 1);
 
 			int cellCount = result.right.pos.x - result.left.pos.x + 1;
 			int buildCount = cellCount / buyMode.Width();
-			//TODO: more thorough as in CanInsertIntoFootprint. This isn't considering 2-high rooms or PlacementRequirements.
+			//TODO: more thorough check, like in CanInsertIntoFootprint. This isn't considering 2-high rooms or PlacementRequirements.
 			//Place as many until PlacementRequirements fail. If can't afford all that, do nothing. 
 			if (buildCount == 0)
 				return false;
 			result.startLeft = (buyMode._cursorpos.x - result.left.pos.x) < (result.right.pos.x - buyMode._cursorpos.x);
 
-			Log.Debug($"CanPaintWholeFloor: {result.left.pos.x}-{result.right.pos.x} fits {buildCount}");
 			return result;
 		}
-		private static GridCell FindEnd(GridCell start, int dx)
+		private static GridCell FindEnd(GridPos start, int dx)
 		{
-			GridCell end = start;
-			for (GridCell gridCell = start; gridCell.IsEmptyFloor(); gridCell = Game.Game.ctx.board.grid.FindGridCellOrNull(end.pos.Add(dx, 0)))
+			//todo: Y.
+			GridCell end,gridCell = Game.Game.ctx.board.grid.FindGridCellOrNull(start);
+			do
+			{
 				end = gridCell;
+				gridCell = Game.Game.ctx.board.grid.FindGridCellOrNull(end.pos.Add(dx, 0));
+			}
+			while (gridCell.IsEmptyFloor());
 			return end;
 		}
 
@@ -117,12 +121,10 @@ namespace BetterPlacement
 
 			GridPos cursorPos = buyMode._cursorpos;//The left side of the mouse-placement unit. Good enough to use.
 
-			Log.Debug($"PayAndPaintWholeFloor: {wholeFloor.left.pos.x}-{wholeFloor.right.pos.x} fits {numPossible} costs {buyMode.GetBuyCost() * numPossible}");
 			for (GridPos buildPos = wholeFloor.startLeft ? wholeFloor.left.pos : new GridPos(wholeFloor.right.pos.x - width + 1, wholeFloor.right.pos.y);
 				buildPos.x + width - 1 <= wholeFloor.right.pos.x && buildPos.x >= wholeFloor.left.pos.x;
 				buildPos.x += wholeFloor.startLeft ? width:-width)
 			{
-				Log.Debug($"Building at {buildPos}");
 				GridCell buildCell = Game.Game.ctx.board.grid.FindGridCell(buildPos);
 				//So much relies on _cursor so let's set the position there. It gets rebuilt after placement anyway
 
