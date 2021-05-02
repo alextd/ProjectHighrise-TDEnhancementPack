@@ -59,8 +59,9 @@ namespace BetterPlacement
 				WholeFloorSize floorSize = buyMode.CanPaintWholeFloor();
 				if (floorSize.success)
 				{
+					//TODO check pay
 					buyMode.UpdateCursor();
-					buyMode.PayAndPaintWholeFloor(floorSize);
+					buyMode.PayAndPaintWholeFloor(floorSize);//CreateCursor sets _successful = false
 					buyMode._paintcount++;
 				}
 				else
@@ -90,6 +91,8 @@ namespace BetterPlacement
 
 			int cellCount = result.right.pos.x - result.left.pos.x + 1;
 			int buildCount = cellCount / buyMode.Width();
+			//TODO: more thorough as in CanInsertIntoFootprint. This isn't considering 2-high rooms or PlacementRequirements.
+			//Place as many until PlacementRequirements fail. If can't afford all that, do nothing. 
 			if (buildCount == 0)
 				return false;
 			result.startLeft = (buyMode._cursorpos.x - result.left.pos.x) < (result.right.pos.x - buyMode._cursorpos.x);
@@ -163,6 +166,7 @@ namespace BetterPlacement
 		{
 			return Game.ctx.sim.player.CanSpend(GetBuyCost());
 		}
+		//ShouldShowPositiveCursor check shift for whole floor
 		*/
 	}
 }
