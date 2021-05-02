@@ -13,6 +13,7 @@ using Game.Session.Entities.Config;
 
 namespace BetterPlacement
 {
+	//ignore _cursor.config.placement.paint. This simply allows things to be drag-painted via DoDragMove
 	[HarmonyPatch(typeof(AbstractPaintInputMode), "DoDragMove")]
 	class EverythingIsPaintable
 	{
@@ -35,6 +36,7 @@ namespace BetterPlacement
 		}
 	}
 
+	//Do not play paint sound if failure while dragging. You clearly are dragging over a room you just placed.
 	[HarmonyPatch(typeof(BuyEntityInputMode), "OnFailedPaint")]
 	class NoHonking
 	{
@@ -49,7 +51,6 @@ namespace BetterPlacement
 				if (inst.Calls(PlayPaintSoundInfo))
 				{
 					//this.PlayPaintSound(success: false);
-					//Do not play paint sound if failure while dragging
 					yield return new CodeInstruction(OpCodes.Ldarg_1);//dragging
 					yield return new CodeInstruction(OpCodes.Call, PlayPaintSoundUnlessDraggingInfo);//this.PlayPaintSoundUnlessDragging(success,dragging)
 				}
@@ -67,6 +68,7 @@ namespace BetterPlacement
 		}
 	}
 
+	//pass through dragging value so ending a drag doesn't honk.
 	[HarmonyPatch(typeof(AbstractPaintInputMode), nameof(AbstractPaintInputMode.DoMouseUp))]
 	public static class MouseUpDragging
 	{
