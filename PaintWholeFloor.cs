@@ -26,19 +26,18 @@ namespace BetterPlacement
 			return new WholeFloorSize() { success = b};
 		}
 	}
-	[HarmonyPatch(typeof(AbstractPaintInputMode), "DoMouseUp")]
+	[HarmonyPatch(typeof(AbstractPaintInputMode), "TryPaint")]
 	public static class PaintWholeFloor
 	{
 		//class AbstractPaintInputMode
 		//protected override void DoMouseUp(Vector2 scrpos, bool wasDragging)
-		public static bool Prefix(AbstractPaintInputMode __instance, Vector2 scrpos, bool wasDragging)
+		public static bool Prefix(AbstractPaintInputMode __instance, bool dragging)
 		{
 			if (__instance is BuyEntityInputMode buyMode)
 			{
 				if (KeyboardShortcutManager.shift)
 				{
-					__instance.UpdateCursorPosition(scrpos);
-					TryPaintWholeFloor(buyMode, dragging: false);
+					TryPaintWholeFloor(buyMode, dragging: dragging);
 					return false;
 				}
 			}
