@@ -81,7 +81,7 @@ namespace BetterPlacement
 			for (GridPos checkPos = buyMode._cursorpos; checkPos.x < buyMode._cursorpos.x + buyMode.Width(); checkPos.x+=1)
 			{
 				GridCell gridCell = Game.Game.ctx.board.grid.FindGridCellOrNull(checkPos);
-				if (!gridCell.IsEmptyFloor())
+				if (!gridCell.IsBuildable())
 					return false;
 			}
 
@@ -91,7 +91,6 @@ namespace BetterPlacement
 
 			int cellCount = result.right.pos.x - result.left.pos.x + 1;
 			int buildCount = cellCount / buyMode.Width();
-			//TODO: more thorough check, like in CanInsertIntoFootprint. This isn't considering 2-high rooms or PlacementRequirements.
 			//Place as many until PlacementRequirements fail. If can't afford all that, do nothing. 
 			if (buildCount == 0)
 				return false;
@@ -108,7 +107,7 @@ namespace BetterPlacement
 				end = gridCell;
 				gridCell = Game.Game.ctx.board.grid.FindGridCellOrNull(end.pos.Add(dx, 0));
 			}
-			while (gridCell.IsEmptyFloor());
+			while (gridCell.IsBuildable());
 			return end;
 		}
 
@@ -162,8 +161,12 @@ namespace BetterPlacement
 		public static bool CanPay(this BuyEntityInputMode buyMode, int count) =>
 			Game.Game.ctx.sim.player.CanSpend(buyMode.GetBuyCost() * count);
 
-		public static bool IsEmptyFloor(this GridCell cell) =>
-			cell != null && cell.hasFloor && !cell.hasUnit;
+		public static bool IsBuildable(this GridCell cell)
+		{
+			return cell != null && cell.hasFloor && !cell.hasUnit;
+
+			//TODO: more thorough check, like in CanInsertIntoFootprint - PlacementRequirements.
+		}
 
 		public static int Width(this BuyEntityInputMode buyMode) =>
 			buyMode._cursor.config.placement.size.x;
