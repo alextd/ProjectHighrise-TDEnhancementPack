@@ -116,7 +116,6 @@ namespace BetterPlacement
 			Game.Game.ctx.sim.player.DoAdd(buyMode.GetBuyCost() * numPossible, Reason.BuildCost, (GridPosF)buyMode._cursorpos);
 
 			GridPos cursorPos = buyMode._cursorpos;//The left side of the mouse-placement unit. Good enough to use.
-			VfxUtil.MaybeSpawnBuildFx(buyMode._cursor.config, cursorPos);
 
 			Log.Debug($"PayAndPaintWholeFloor: {wholeFloor.left.pos.x}-{wholeFloor.right.pos.x} fits {numPossible} costs {buyMode.GetBuyCost() * numPossible}");
 			for (GridPos buildPos = wholeFloor.startLeft ? wholeFloor.left.pos : new GridPos(wholeFloor.right.pos.x - width + 1, wholeFloor.right.pos.y);
@@ -125,6 +124,13 @@ namespace BetterPlacement
 			{
 				Log.Debug($"Building at {buildPos}");
 				GridCell buildCell = Game.Game.ctx.board.grid.FindGridCell(buildPos);
+				//So much relies on _cursor so let's set the position there. It gets rebuilt after placement anyway
+
+				buyMode.DoMoveCursor(buildPos, buyMode._grid.GridPosToWorldPos(buildPos));
+				buyMode._cursorpos = buildPos;
+
+				VfxUtil.MaybeSpawnBuildFx(buyMode._cursor.config, buildPos);
+
 				if (buyMode._cursor.config.placement.lobbycandidate)
 				{
 					buyMode.ClearLobby(buildCell);
