@@ -19,14 +19,14 @@ namespace BetterPlacement
 {
 	public struct WholeFloorSize
 	{
-		public GridCell left, right; public bool success, startLeft;
+		public GridPos left, right; public bool success, startLeft;
 
 		public static implicit operator WholeFloorSize(bool b)
 		{
 			return new WholeFloorSize() { success = b};
 		}
 
-		public int Count() => right.pos.x - left.pos.x + 1;
+		public int Count() => right.x - left.x + 1;
 	}
 	[HarmonyPatch(typeof(AbstractPaintInputMode), "TryPaint")]
 	public static class PaintWholeFloor
@@ -79,38 +79,33 @@ namespace BetterPlacement
 
 		public static WholeFloorSize CanPaintWholeFloor(this BuyEntityInputMode buyMode)
 		{
-			for (GridPos checkPos = buyMode._cursorpos; checkPos.x < buyMode._cursorpos.x + buyMode.Width(); checkPos.x+=1)
-			{
-				GridCell gridCell = Game.Game.ctx.board.grid.FindGridCellOrNull(checkPos);
-				if (!gridCell.IsBuildable())
-					return false;
-			}
+			if (!buyMode.IsBuildable(buyMode._cursorpos))
+				return false;
 
 			WholeFloorSize result = true;
-			result.left = FindEnd(buyMode._cursorpos, -1);
-			result.right = FindEnd(buyMode._cursorpos, 1);
+			result.left = buyMode.FindEnd(buyMode._cursorpos, -1);
+			result.right = buyMode.FindEnd(buyMode._cursorpos, 1);
+			//Start at whichever end the cursor is closer to.
+			result.startLeft = (buyMode._cursorpos.x - result.left.x) < (result.right.x - buyMode._cursorpos.x);
+			//Adjust right end for room width.
+			result.right.x += buyMode.Width() - 1;
 
 			int cellCount = result.Count();
 			int buildCount = cellCount / buyMode.Width();
-			//Place as many until PlacementRequirements fail. If can't afford all that, do nothing. 
 			if (buildCount == 0)
 				return false;
 			
-			//Start at whichever end the cursor is closer to.
-			result.startLeft = (buyMode._cursorpos.x - result.left.pos.x) < (result.right.pos.x - buyMode._cursorpos.x);
-
 			return result;
 		}
-		private static GridCell FindEnd(GridPos start, int dx)
+		private static GridPos FindEnd(this BuyEntityInputMode buyMode, GridPos start, int dx)
 		{
-			//todo: Y.
-			GridCell end,gridCell = Game.Game.ctx.board.grid.FindGridCellOrNull(start);
+			GridPos end,gridPos = start;
 			do
 			{
-				end = gridCell;
-				gridCell = Game.Game.ctx.board.grid.FindGridCellOrNull(end.pos.Add(dx, 0));
+				end = gridPos;
+				gridPos = end.Add(dx, 0);
 			}
-			while (gridCell.IsBuildable());
+			while (buyMode.IsBuildable(gridPos));
 			return end;
 		}
 
@@ -123,8 +118,8 @@ namespace BetterPlacement
 
 			GridPos cursorPos = buyMode._cursorpos;//The left side of the mouse-placement unit. Good enough to use.
 
-			for (GridPos buildPos = wholeFloor.startLeft ? wholeFloor.left.pos : new GridPos(wholeFloor.right.pos.x - width + 1, wholeFloor.right.pos.y);
-				buildPos.x + width - 1 <= wholeFloor.right.pos.x && buildPos.x >= wholeFloor.left.pos.x;
+			for (GridPos buildPos = wholeFloor.startLeft ? wholeFloor.left : new GridPos(wholeFloor.right.x - width + 1, wholeFloor.right.y);
+				buildPos.x + width - 1 <= wholeFloor.right.x && buildPos.x >= wholeFloor.left.x;
 				buildPos.x += wholeFloor.startLeft ? width:-width)
 			{
 				GridCell buildCell = Game.Game.ctx.board.grid.FindGridCell(buildPos);
@@ -164,11 +159,13 @@ namespace BetterPlacement
 		public static bool CanPayWholeFloor(this BuyEntityInputMode buyMode, WholeFloorSize wholeFloor) =>
 			Game.Game.ctx.sim.player.CanSpend(buyMode.GetBuyCost() * (wholeFloor.Count() / buyMode.Width()));
 
-		public static bool IsBuildable(this GridCell cell)
+		//Can the room be placed here:
+		public static bool IsBuildable(this BuyEntityInputMode buyMode, GridPos pos)
 		{
-			return cell != null && cell.hasFloor && !cell.hasUnit;
+			if (Game.Game.serv.globals.settings.cheats.allowplacementanywhere)
+				return true;
 
-			//TODO: more thorough check, like in CanInsertIntoFootprint - PlacementRequirements.
+			return buyMode._grid.CanInsertIntoFootprint(pos, buyMode._cursor.config, buyMode._cursor.config.placement.reqs) == GridCell.GridAddResult.Success;
 		}
 
 		public static int Width(this BuyEntityInputMode buyMode) =>
