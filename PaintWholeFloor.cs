@@ -25,6 +25,8 @@ namespace BetterPlacement
 		{
 			return new WholeFloorSize() { success = b};
 		}
+
+		public int Count() => right.pos.x - left.pos.x + 1;
 	}
 	[HarmonyPatch(typeof(AbstractPaintInputMode), "TryPaint")]
 	public static class PaintWholeFloor
@@ -56,9 +58,11 @@ namespace BetterPlacement
 			if (!floorSize.success)
 				buyMode._successful = false;
 
+			if(!buyMode.CanPayWholeFloor(floorSize))
+				buyMode._successful = false;
+
 			if (buyMode._successful)
 			{
-				//TODO check pay
 				buyMode.UpdateCursor();
 				buyMode.PayAndPaintWholeFloor(floorSize);//CreateCursor sets _successful = false
 				buyMode._paintcount++;
@@ -86,11 +90,13 @@ namespace BetterPlacement
 			result.left = FindEnd(buyMode._cursorpos, -1);
 			result.right = FindEnd(buyMode._cursorpos, 1);
 
-			int cellCount = result.right.pos.x - result.left.pos.x + 1;
+			int cellCount = result.Count();
 			int buildCount = cellCount / buyMode.Width();
 			//Place as many until PlacementRequirements fail. If can't afford all that, do nothing. 
 			if (buildCount == 0)
 				return false;
+			
+			//Start at whichever end the cursor is closer to.
 			result.startLeft = (buyMode._cursorpos.x - result.left.pos.x) < (result.right.pos.x - buyMode._cursorpos.x);
 
 			return result;
@@ -112,7 +118,7 @@ namespace BetterPlacement
 		public static void PayAndPaintWholeFloor(this BuyEntityInputMode buyMode, WholeFloorSize wholeFloor)
 		{
 			int width = buyMode.Width();
-			int numPossible = (wholeFloor.right.pos.x - wholeFloor.left.pos.x + 1) / width;
+			int numPossible = wholeFloor.Count() / width;
 			Game.Game.ctx.sim.player.DoAdd(buyMode.GetBuyCost() * numPossible, Reason.BuildCost, (GridPosF)buyMode._cursorpos);
 
 			GridPos cursorPos = buyMode._cursorpos;//The left side of the mouse-placement unit. Good enough to use.
@@ -155,8 +161,8 @@ namespace BetterPlacement
 		}
 
 
-		public static bool CanPay(this BuyEntityInputMode buyMode, int count) =>
-			Game.Game.ctx.sim.player.CanSpend(buyMode.GetBuyCost() * count);
+		public static bool CanPayWholeFloor(this BuyEntityInputMode buyMode, WholeFloorSize wholeFloor) =>
+			Game.Game.ctx.sim.player.CanSpend(buyMode.GetBuyCost() * (wholeFloor.Count() / buyMode.Width()));
 
 		public static bool IsBuildable(this GridCell cell)
 		{
