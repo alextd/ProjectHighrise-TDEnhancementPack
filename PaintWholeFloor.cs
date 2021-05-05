@@ -52,18 +52,16 @@ namespace BetterPlacement
 				!buyMode._cursor.config.placement.multiplace)
 				buyMode._successful = false;
 
+			WholeFloorSize floorSize = buyMode.CanPaintWholeFloor();
+			if (!floorSize.success)
+				buyMode._successful = false;
+
 			if (buyMode._successful)
 			{
-				WholeFloorSize floorSize = buyMode.CanPaintWholeFloor();
-				if (floorSize.success)
-				{
-					//TODO check pay
-					buyMode.UpdateCursor();
-					buyMode.PayAndPaintWholeFloor(floorSize);//CreateCursor sets _successful = false
-					buyMode._paintcount++;
-				}
-				else
-					buyMode._successful = false;
+				//TODO check pay
+				buyMode.UpdateCursor();
+				buyMode.PayAndPaintWholeFloor(floorSize);//CreateCursor sets _successful = false
+				buyMode._paintcount++;
 			}
 			else
 			{
