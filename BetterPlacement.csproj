@@ -75,12 +75,17 @@
       <HintPath>UnityEngine.IMGUIModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>UnityEngine.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BetterPlacement.cs" />
     <Compile Include="EverythingIsPaintable.cs" />
     <Compile Include="PaintWholeFloor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="MoveInDialog.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\.editorconfig" />
