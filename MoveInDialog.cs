@@ -141,13 +141,38 @@ namespace BetterPlacement
 
 			MoveInsDefinition moveInsDefinition = __instance.FindDefinitionGivenSpaceTypeAndSize(emptyspace);
 			Entity nextEntity = MoveInAllTenants.PerformMoveInAll(__instance, emptyspace, moveInsDefinition, entryid);
-			Log.Message($"Next Entity is {nextEntity}:{nextEntity.id}, {nextEntity.data.placement.gridpos}");
 
 			if (nextEntity != null)
 			{
 				Game.Game.ctx.board.DoSelect(nextEntity);
 			}
 
+			return false;
+		}
+	}
+
+	[HarmonyPatch(typeof(MoveInsManager), nameof(MoveInsManager.StartAdvertising))]
+	public static class StartAllAds
+	{
+		//Technicaly I'd want to change the call to StartAdvertising to check shift and call a new method but that'd take a transpiler and this works fine.
+		public static bool recursive = false;
+
+		//public void StartAdvertising(string entryid, Entity e)
+		public static bool Prefix(Entity e)
+		{
+			if (!KeyboardShortcutManager.shift || recursive) return true;
+
+			MoveInsDefinition def = Game.Game.ctx.sim.moveins.FindDefinitionGivenSpaceTypeAndSize(e);
+			recursive = true;
+			foreach (MoveInsEntry entry in Game.Game.ctx.sim.moveins.FindMoveInsEntryList(def).Where(me => me.IsEntryVisible()))
+			{
+				MoveInsEntryStatus moveInsEntryStatus = Game.Game.ctx.sim.moveins.FindSavedStatus(entry.id);
+				if (moveInsEntryStatus.IsNotAdvertising)
+				{
+					Game.Game.ctx.sim.moveins.StartAdvertising(entry.id, e);
+				}
+			}
+			recursive = false;
 			return false;
 		}
 	}
