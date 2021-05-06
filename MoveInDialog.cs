@@ -53,10 +53,10 @@ namespace BetterPlacement
 		{
 			if (KeyboardShortcutManager.shift)
 			{
-				//MoveInsDefinition def = ctx.def;	//Why does PerformMoveIn have this argument?
-				string entryid = __instance._entryid;//TODO: Different entryid each click?
+				MoveInsDefinition def = ctx.def;	//Why does PerformMoveIn have this argument?
+				string entryid = __instance._entryid;
 				UnitInstanceData unit = ctx.unitdata;
-				Log.Message($"Moving in all {ctx} ({entryid}, {unit})");
+				Log.Message($"Moving in all {entryid}");
 
 				bool kaching = false;
 				MoveInsManager manager = Game.Game.ctx.sim.moveins;
@@ -64,14 +64,17 @@ namespace BetterPlacement
 
 				foreach (Entity emptyspace in Game.Game.ctx.entityman._templateEntityCache[__instance.GetEntity().config.template].ToList())
 				{
-					Log.Message($"Moving in {emptyspace}:{emptyspace.id}");
+					Log.Message($"Moving in {emptyspace}:{emptyspace.id} - {unit}");
 					try
 					{
+						if(unit == null)//probably out of candidates
+						{
+							break;
+						}
 						if (!manager.CanMoveIn(unit, emptyspace))
 						{
 							break;//TODO: Warning.
 						}
-						manager.RemoveFromSavedResults(entryid, unit);
 
 						Money moveInCost = manager.GetMoveInCost(unit, emptyspace);
 						if (moveInCost != 0) kaching = true;
@@ -85,6 +88,16 @@ namespace BetterPlacement
 						entity.components.unit.SaveStatsOnMoveIn();
 						entity.components.placement.StartBuilding(entity.components.placement.NeedsBuiltInstantly());
 						Game.Game.ctx.events.Send(GameEventType.EntityAfterCreatedByPlayer, entity.id, gridpos);
+
+						//It seems to me "instant" means "generic + always available, clicking means prepare" e.g. apartment types.
+						//Non-instant means "must have interested individual, clicking means accept"
+						//Which is the opposite of instant, since apartments do NOT move in instantly, but offices do.
+						//Perhaps it is supposed to mean 'instantly available'
+						if (def.instant == null)
+						{
+							manager.RemoveFromSavedResults(entryid, unit);//Pointless for instant as it refills.
+							unit = manager.FindSavedStatus(entryid).candidates.FirstOrDefault();
+						}
 					}
 					catch(Exception e)
 					{
