@@ -68,7 +68,7 @@ namespace BetterPlacement
 			return false;
 		}
 
-		public static void PerformMoveInAll(MoveInsManager manager, Entity selected, MoveInsDefinition def, string entryid, UnitInstanceData unit = null)
+		public static Entity PerformMoveInAll(MoveInsManager manager, Entity selected, MoveInsDefinition def, string entryid, UnitInstanceData unit = null)
 		{
 			bool kaching = false;
 
@@ -76,14 +76,20 @@ namespace BetterPlacement
 
 			emptySpaces.Sort((Entity a, Entity b) => DistanceToSelection(selected, a) - DistanceToSelection(selected, b));
 
+			Entity nextEntity = null;
 			foreach (Entity emptyspace in emptySpaces)
 			{
 				if (unit == null)//probably out of candidates
 				{
 					unit = manager.FindSavedStatus(entryid).candidates.FirstOrDefault();
 					if (unit == null)//probably out of candidates
+					{
+						nextEntity = emptyspace;
 						break;
+					}
 				}
+
+				//This might be dangerously close to PerformMoveIn. Thought it would change more. Basically need to not audio.PlayUISFX so much.
 				if (!manager.CanMoveIn(unit, emptyspace))
 				{
 					break;//TODO: Warning.
@@ -118,6 +124,8 @@ namespace BetterPlacement
 
 			if (kaching)
 				Game.Game.serv.audio.PlayUISFX(UIEffectType.Purchase);
+
+			return nextEntity;
 		}
 	}
 
@@ -132,7 +140,13 @@ namespace BetterPlacement
 			//This is probably redundant since 'Ad selected' implies not instant.
 
 			MoveInsDefinition moveInsDefinition = __instance.FindDefinitionGivenSpaceTypeAndSize(emptyspace);
-			MoveInAllTenants.PerformMoveInAll(__instance, emptyspace, moveInsDefinition, entryid);
+			Entity nextEntity = MoveInAllTenants.PerformMoveInAll(__instance, emptyspace, moveInsDefinition, entryid);
+			Log.Message($"Next Entity is {nextEntity}:{nextEntity.id}, {nextEntity.data.placement.gridpos}");
+
+			if (nextEntity != null)
+			{
+				Game.Game.ctx.board.DoSelect(nextEntity);
+			}
 
 			return false;
 		}
