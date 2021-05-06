@@ -48,21 +48,37 @@ namespace BetterPlacement
 	[HarmonyPatch(typeof(MoveInTenantsDialog), nameof(MoveInTenantsDialog.OnEntryClick))]
 	public static class MoveInAllTenants
 	{
+		public static int DistanceToSelection(Entity selected, Entity e)
+		{
+			int dx = Math.Abs(e.data.placement.gridpos.x - selected.data.placement.gridpos.x);
+			int dy = e.data.placement.gridpos.y - selected.data.placement.gridpos.y;
+			if (dy == 0)
+				return dx;
+			if (dy < 0)
+				return -dy * 1000 - 500 + dx;
+			return dy * 1000 + dx;
+		}
 		//private void OnEntryClick(TenantEntryContext ctx)
 		public static bool Prefix(MoveInTenantsDialog __instance, MoveInTenantsDialog.TenantEntryContext ctx)
 		{
 			if (KeyboardShortcutManager.shift)
 			{
+				Entity selected = __instance.GetEntity();
 				MoveInsDefinition def = ctx.def;	//Why does PerformMoveIn have this argument?
 				string entryid = __instance._entryid;
-				UnitInstanceData unit = ctx.unitdata;
+
+				UnitInstanceData unit = ctx.unitdata;//Universal for residences, unique for offices. See 'instant'
 				Log.Message($"Moving in all {entryid}");
 
 				bool kaching = false;
 				MoveInsManager manager = Game.Game.ctx.sim.moveins;
-				EntityTemplate template = Game.Game.ctx.entityman.FindTemplate(unit.template);
+				EntityTemplate template = Game.Game.ctx.entityman.FindTemplate(unit.template);//Don't understand how selected.config doesn't work here.
 
-				foreach (Entity emptyspace in Game.Game.ctx.entityman._templateEntityCache[__instance.GetEntity().config.template].ToList())
+				List<Entity> emptySpaces = Game.Game.ctx.entityman.GetCachedEntitiesByTemplateUnsafe(selected.config.template).ToList();
+
+				emptySpaces.Sort( (Entity a, Entity b) => DistanceToSelection(selected, a) - DistanceToSelection(selected, b));
+
+				foreach (Entity emptyspace in emptySpaces)
 				{
 					Log.Message($"Moving in {emptyspace}:{emptyspace.id} - {unit}");
 					try
