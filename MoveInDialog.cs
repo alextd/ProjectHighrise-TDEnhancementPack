@@ -61,75 +61,80 @@ namespace BetterPlacement
 		//private void OnEntryClick(TenantEntryContext ctx)
 		public static bool Prefix(MoveInTenantsDialog __instance, MoveInTenantsDialog.TenantEntryContext ctx)
 		{
-			if (KeyboardShortcutManager.shift)
+			if (!KeyboardShortcutManager.shift) return true;
+
+			PerformMoveInAll(Game.Game.ctx.sim.moveins, __instance.GetEntity(), ctx.def, __instance._entryid, ctx.unitdata);
+
+			return false;
+		}
+
+		public static void PerformMoveInAll(MoveInsManager manager, Entity selected, MoveInsDefinition def, string entryid, UnitInstanceData unit = null)
+		{
+			bool kaching = false;
+
+			List<Entity> emptySpaces = Game.Game.ctx.entityman.GetCachedEntitiesByTemplateUnsafe(selected.config.template).ToList();
+
+			emptySpaces.Sort((Entity a, Entity b) => DistanceToSelection(selected, a) - DistanceToSelection(selected, b));
+
+			foreach (Entity emptyspace in emptySpaces)
 			{
-				Entity selected = __instance.GetEntity();
-				MoveInsDefinition def = ctx.def;	//Why does PerformMoveIn have this argument?
-				string entryid = __instance._entryid;
-
-				UnitInstanceData unit = ctx.unitdata;//Universal for residences, unique for offices. See 'instant'
-				Log.Message($"Moving in all {entryid}");
-
-				bool kaching = false;
-				MoveInsManager manager = Game.Game.ctx.sim.moveins;
-				EntityTemplate template = Game.Game.ctx.entityman.FindTemplate(unit.template);//Don't understand how selected.config doesn't work here.
-
-				List<Entity> emptySpaces = Game.Game.ctx.entityman.GetCachedEntitiesByTemplateUnsafe(selected.config.template).ToList();
-
-				emptySpaces.Sort( (Entity a, Entity b) => DistanceToSelection(selected, a) - DistanceToSelection(selected, b));
-
-				foreach (Entity emptyspace in emptySpaces)
+				if (unit == null)//probably out of candidates
 				{
-					Log.Message($"Moving in {emptyspace}:{emptyspace.id} - {unit}");
-					try
-					{
-						if(unit == null)//probably out of candidates
-						{
-							break;
-						}
-						if (!manager.CanMoveIn(unit, emptyspace))
-						{
-							break;//TODO: Warning.
-						}
-
-						Money moveInCost = manager.GetMoveInCost(unit, emptyspace);
-						if (moveInCost != 0) kaching = true;
-						manager._manager.player.DoAdd(moveInCost, Reason.BuildCost, emptyspace);
-
-						GridPos gridpos = emptyspace.data.placement.gridpos;
-						Game.Game.ctx.board.DestroyEntity(emptyspace, playerInitiated: true, "move-in");
-						Entity entity = Game.Game.ctx.board.CreateEntity(template, gridpos, enabled: true);
-
-						entity.components.unit.PopulateFromRecipe(unit);
-						entity.components.unit.SaveStatsOnMoveIn();
-						entity.components.placement.StartBuilding(entity.components.placement.NeedsBuiltInstantly());
-						Game.Game.ctx.events.Send(GameEventType.EntityAfterCreatedByPlayer, entity.id, gridpos);
-
-						//It seems to me "instant" means "generic + always available, clicking means prepare" e.g. apartment types.
-						//Non-instant means "must have interested individual, clicking means accept"
-						//Which is the opposite of instant, since apartments do NOT move in instantly, but offices do.
-						//Perhaps it is supposed to mean 'instantly available'
-						if (def.instant == null)
-						{
-							manager.RemoveFromSavedResults(entryid, unit);//Pointless for instant as it refills.
-							unit = manager.FindSavedStatus(entryid).candidates.FirstOrDefault();
-						}
-					}
-					catch(Exception e)
-					{
-						Log.Error($"Failed move in {emptyspace}:{emptyspace.id}: {e};{e.StackTrace}");
-					}
-					Log.Message($"Moved in!");
+					unit = manager.FindSavedStatus(entryid).candidates.FirstOrDefault();
+					if (unit == null)//probably out of candidates
+						break;
 				}
-				if (kaching)
+				if (!manager.CanMoveIn(unit, emptyspace))
 				{
-					Game.Game.serv.audio.PlayUISFX(UIEffectType.Purchase);
+					break;//TODO: Warning.
 				}
-				Log.Message($"Done moving in");
 
-				return false;
+				Money moveInCost = manager.GetMoveInCost(unit, emptyspace);
+				if (moveInCost != 0) kaching = true;
+				manager._manager.player.DoAdd(moveInCost, Reason.BuildCost, emptyspace);
+
+				GridPos gridpos = emptyspace.data.placement.gridpos;
+				Game.Game.ctx.board.DestroyEntity(emptyspace, playerInitiated: true, "move-in");
+
+				EntityTemplate template = Game.Game.ctx.entityman.FindTemplate(unit.template);//This is a DIFFERENT USAGE OF TEMPLATE from config.template.
+																																											//This is the graphical template. not the room type template.
+				Entity entity = Game.Game.ctx.board.CreateEntity(template, gridpos, enabled: true);
+
+				entity.components.unit.PopulateFromRecipe(unit);
+				entity.components.unit.SaveStatsOnMoveIn();
+				entity.components.placement.StartBuilding(entity.components.placement.NeedsBuiltInstantly());
+				Game.Game.ctx.events.Send(GameEventType.EntityAfterCreatedByPlayer, entity.id, gridpos);
+
+				//It seems to me "instant" means "generic + always available, clicking means prepare" e.g. apartment types.
+				//Non-instant means "must have interested individual, clicking means accept"
+				//Which is the opposite of instant, since apartments do NOT move in instantly, but offices do.
+				//Perhaps it is supposed to mean 'instantly available'
+				if (def.instant == null)
+				{
+					manager.RemoveFromSavedResults(entryid, unit);//Pointless for instant as it refills.
+					unit = null;
+				}
 			}
-			else return true;
+
+			if (kaching)
+				Game.Game.serv.audio.PlayUISFX(UIEffectType.Purchase);
+		}
+	}
+
+	[HarmonyPatch(typeof(MoveInsManager), nameof(MoveInsManager.OnAdSelected))]
+	public static class AcceptAllAds
+	{
+		//public void OnAdSelected(Entity emptyspace, string entryid)
+		public static bool Prefix(MoveInsManager __instance, Entity emptyspace, string entryid)
+		{
+			if (!KeyboardShortcutManager.shift) return true;
+
+			//This is probably redundant since 'Ad selected' implies not instant.
+
+			MoveInsDefinition moveInsDefinition = __instance.FindDefinitionGivenSpaceTypeAndSize(emptyspace);
+			MoveInAllTenants.PerformMoveInAll(__instance, emptyspace, moveInsDefinition, entryid);
+
+			return false;
 		}
 	}
 }
