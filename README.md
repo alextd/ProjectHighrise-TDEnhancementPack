@@ -1,9 +1,11 @@
 # ProjectHighrise-BetterPlacement
 A mod for Project Highrise that makes placing rooms easier, so you don't have to click literally hundreds of times in precise locations.
+In short: shift-click copies that action where available. Shift-click floors to fill floors with rooms. Shift-click tenants to move in all possible tenants.
+Also a few fixes for saving/loading so people don't always forget what they're doing and lose progress.
 
 
 To install:
-Use BepInEx, put BetterPlacement.dll in plugins. Todo: explain BepInEx. TL;DR Drop BepInEx into Project Highrise intallation.
+Use BepInEx (https://github.com/BepInEx/BepInEx), put BetterPlacement.dll in plugins. Todo: explain BepInEx. TL;DR Drop BepInEx into Project Highrise intallation.
 
 
 To develop code (after BepInEx installed):
