@@ -8,90 +8,22 @@ using Game.Session.Entities.Components;
 using Game.Session.Entities;
 using Game.Session.Entities.Data;
 using Game.Session.Board;
+using Game.Session.Sim;
 using Game.Components;
 using SomaSim.AI;
 using Game.AI;
+using Game.AI.Actions;
 
 namespace BetterPlacement
 {
-	[HarmonyPatch(typeof(PeepComponent), nameof(PeepComponent.PickFromSchedule))]
-	public static class SaveScriptState
-	{
-		public static void LogScriptQueue(Entity e)
-		{
-			Log.Debug($"Queue for {e}:{e.id}");
-			if (e.components?.script?.queue is GameScriptQueue q && !q.IsEmpty)
-			{
-				foreach (Script s in q)
-					Log.Debug($"- {s.Name}");
-			}
-			else Log.Debug("- (empty)");
-		}
-		//PickFromSchedule
-		public static void Prefix(PeepComponent __instance, Entity ____entity)
-		{
-			Log.Debug($"Scheduling {____entity}:{____entity.id}");
-			LogScriptQueue(____entity);
-		}
-		public static void Postfix(PeepComponent __instance, Entity ____entity)
-		{
-			Log.Debug($"Scheduled {____entity}:{____entity.id}");
-			LogScriptQueue(____entity);
-		}
-	}
+	//People would go to their office when the game was loaded.
+	//This was because they though they weren't in the building
+	//This is because the building wasn't loaded
+	//This is because the Unity GameObjects created during loading were 'active' and therefore could call 'Update' before loading finished
 
+	//So - simply set them inactive as they are loaded, then activate them all later.
+	//TODO - all unity game objects? Oh well this is enough.
 
-	[HarmonyPatch(typeof(ScheduleManager), nameof(ScheduleManager.InBuilding))]
-	public static class LogInBuilding
-	{
-		//private static bool InBuilding(Entity entity)
-		public static void Postfix(bool __result, Entity entity)
-		{
-			Log.Debug($"InBuilding({entity}:{entity.id}) -> {__result}");
-			Log.Debug($"entity.components.sprite.IsVisible ({entity.components.sprite.IsVisible})");
-			Log.Debug($"Game.ctx.board.grid.FindGridCellOrNull(entity) ({Game.Game.ctx.board.grid.FindGridCellOrNull(entity)})");
-			Log.Debug($"Game.ctx.board.grid.FindGridCellOrNull(entity).hasFloor ({Game.Game.ctx.board.grid.FindGridCellOrNull(entity).hasFloor})");
-		}
-	}
-
-	//private void InitNewGameBoard(GameEvent gev)
-	[HarmonyPatch(typeof(StartupLevelGenerator), nameof(StartupLevelGenerator.InitNewGameBoard))]
-	public static class TESTLOG
-	{
-		public static void Prefix()
-		{
-			Log.Debug(":::INITNEWGAMEBOARD");
-		}
-	}
-	//internal void AddFloor(FloorType ft = FloorType.Default)
-	[HarmonyPatch(typeof(GridCell), nameof(GridCell.AddFloor))]
-	public static class TESTLOG2
-	{
-		public static void Prefix(GridCell __instance)
-		{
-			Log.Debug($":::AddFloor({__instance}");
-		}
-	}
-
-	//Does Loaded peeps update before Grid is loaded?
-	[HarmonyPatch(typeof(PeepComponent), nameof(PeepComponent.Update))]
-	public static class TESTLOG3
-	{
-		public static void Prefix(Entity ____entity)
-		{
-			Log.Debug($"Update({____entity}:{____entity.id})");
-		}
-	}
-
-	//public void Load(Hashtable data)
-	[HarmonyPatch(typeof(Grid), nameof(Grid.Load))]
-	public static class TESTLOG4
-	{
-		public static void Prefix()
-		{
-			Log.Debug($":::GRID LOADING");
-		}
-	}
 
 	[HarmonyPatch(typeof(EntityManager), nameof(EntityManager.CreateByTemplate))]
 	public static class DeactivateWhileLoading
@@ -107,11 +39,34 @@ namespace BetterPlacement
 	[HarmonyPatch(typeof(EntityManager), nameof(EntityManager.OnAfterLoad))]
 	public static class ActivateAfterLoad
 	{
-	//public void OnAfterLoad()
+		//public void OnAfterLoad()
 		public static void Postfix(EntityManager __instance)
 		{
 			foreach (Entity e in __instance.GetAllEntities())
 				e.go?.SetActive(true);
+		}
+	}
+
+
+
+	//#2 problem is that task progress wasn't saved.
+	//Simply enough, you just need to lower the duration of the task while it is being worked on.
+	[HarmonyPatch(typeof(ActionPauseForTask), nameof(ActionPauseForTask.OnUpdate))]
+	public static class SaveProgress
+	{
+		//internal override void OnUpdate()
+		public static void Prefix(ActionPauseForTask __instance)
+		{
+			SupportTask task = __instance.context.agent.components.peep.GetTaskUnsafe();
+			if (task == null) return;
+
+			float dt = Game.Game.ctx.clock.deltaTimeSim;
+			ConsultantManager consultants = Game.Game.ctx.sim.consultants;
+			if ((task.isCategoryBuilding && consultants.IsUpgradeActive("cons-c-4")) || (task.isCategoryService && consultants.IsUpgradeActive("cons-c-5")))
+			{
+				dt *= 2f;
+			}
+			task.durationsec -= dt;
 		}
 	}
 }
