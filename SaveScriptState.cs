@@ -9,12 +9,14 @@ using System.Text;
 using HarmonyLib;
 using Game.Session.Entities.Components;
 using Game.Session.Entities;
+using Game.Session.Entities.Config;
 using Game.Session.Entities.Data;
 using Game.Session.Board;
 using Game.Session.Sim;
 using Game.Services;
 using Game.Components;
 using SomaSim;
+using SomaSim.Collections;
 using SomaSim.AI;
 using SomaSim.Serializer;
 using Game.AI;
@@ -142,10 +144,7 @@ namespace BetterPlacement
 				if (script is GameScript gameScript)
 					hash["task"] = gameScript.task;
 				hash["Name"] = script.Name;
-
-				//Just ignore this entire script if the action includes FollowPath. It needs to be regenerated from ActionNavigate.
-				if(!script.Any(a => a is ActionFollowPath))
-					hash["_queue"] = Game.Game.serv.serializer.Serialize(script._queue, true);
+				hash["_queue"] = Game.Game.serv.serializer.Serialize(script._queue, true);
 
 				__result = hash;//SerializeEnumerable returns ArrayList even though the place that uses it only needs an object so this should work? 
 				// I do have to override deserialize - but otherwise it would only deserialize the enumerable part, not thinking about other members.
@@ -165,12 +164,13 @@ namespace BetterPlacement
 		{
 			if (value is SomaSim.AI.Action action)
 			{
-				 //Jesus blimey for real - Enumerable serialization only writes their element's type if the enumerable itself is not generic.
-				 //Well Actions are stored in a Deque<Action> - so it's not saving what subclass of action
-				 // AS IF whether or not the ENUMERABLE is generic should tell us whether or not the ELEMENTS have subclass types?
+				//Jesus blimey for real - Enumerable serialization only writes their element's type if the enumerable itself is not generic.
+				//Well Actions are stored in a Deque<Action> - so it's not saving what subclass of action
+				// AS IF whether or not the ENUMERABLE is generic should tell us whether or not the ELEMENTS have subclass types?
 				specifyType = true;
-				Log.Debug($"---Serializing {action} : {action.GetType()}");
 
+
+				Log.Debug($"---Serializing {action} : {action.GetType()}");
 				if (HandleAction(action) is Hashtable hash)
 				{
 					//Something special was done in HandleAction. But here we handle this:
@@ -216,7 +216,7 @@ namespace BetterPlacement
 		public static void Postfix(object __result, object value)
 		{
 			//These actions need to be restarted to set up callbacks.
-			if (value is ActionWaitSeated || value is ActionWaitInLine)
+			if (value is ActionWaitSeated || value is ActionWaitInLine || value is ActionWaitForElevator)
 			{
 				if (__result is Hashtable hash)
 					hash["_updatedOnce"] = false; //force OnStarted to run
@@ -246,21 +246,61 @@ namespace BetterPlacement
 			*/
 
 			//There's actually not a whole lot that need special handling.
-			//ActionNavigate needs to be re-run to re-generate ActionFollowPath
+
+
 			else if (action is Game.AI.Actions.ActionNavigate actionNavigate)
+			{
+				//Okay this script can be in a few states:
+				//Not run. Nothing special.
+				//Pending (aka !IsDone). Needs to be restarted since path creation component needs to be restarted
+				//IsDone + Success - Waiting on interrupted script to finish
+				//IsDone + Failed - that is, Path creation failed - it will immediately need to stop the script in OnUpdate
+				// (which probably happened already but there's a slight possiblity it got the result but didn't update)
+
+				//But if it's pending, it needs to be restarted to call Game.ctx.board.nav.AddSearch.
+				hash = new Hashtable();
+
+				//"IsDone" Means the path creation task is done.
+				//Otherwise, it's pending, but the callback it's waiting on is not saved
+				//So the action needs to be restarted to call Game.ctx.board.nav.AddSearch.
+				//OnUpdate otherwise would be waiting for that path processing callback that'll never come
+				if (!actionNavigate.IsDone)
+					hash["_updatedOnce"] = false;//force restart. Otherwise, _updatedOnce is handled automatically after HandleAction
+				else
+					hash["_done"] = Game.Game.serv.serializer.Serialize(actionNavigate._done);//_done is Pending by default
+
+				//Of course this is just a configuration so save it:
+				hash["delivery"] = actionNavigate.delivery;
+
+
+				//Let's consider the members:
+
+				//private GridCell _target;
+				//private GridPosF _targetpos;
+				//private int _totalstairs;
+				//private int _totalescalators;
+
+				//They are only used inside OnStarted, or the callback ProcessNavResult, which won't be saved anyway.
+				//They will be re-made when status is pending; They won't be needed when status is not pending.
+				//Verdict: no reason to save these. Good because _target is a reference anyway.
+
+				//No special loading is needed!
+				//What about the cart anim without restarting? Anim loading should hopefully be handled elsewhere
+			}
+
+			//ActionFollowPath has no default constructor.
+			//So the serializer has nothing to compare to determine which default values to not write
+			//And it explodes. Meh. Okay just do it here.
+			else if (action is Game.AI.Actions.ActionFollowPath actionFollowPath)
 			{
 				hash = new Hashtable();
 
-				//Re-do this action from the start, so it creates a new ActionFollowPath
-				//(It is otherwise expecting a result from FollowPath.)
-				hash["_updatedOnce"] = false;
+				hash.SerAdd("speedwobble", actionFollowPath.speedwobble);
+				hash.SerAdd("_path", actionFollowPath._path);
+				hash.SerAdd("_type", actionFollowPath._type);
+				hash.SerAdd("_delivery", actionFollowPath._delivery);
 
-				//All the other "_" members are set in OnStarted and don't need to be saved!
-				//Luckily the GridCell doesn't need to be saved by reference at all!
-				//The context of GameScriptQueue should be enough for this to run
-				hash["delivery"] = actionNavigate.delivery;
-
-				//No special loading is needed!
+				return hash;
 			}
 
 			//Waiting for Elevator has a reference to Entity. So this needs a big manual step.
@@ -278,9 +318,6 @@ namespace BetterPlacement
 				//Of course, dang it, how would I resolve this reference? I'd need to save that ID somewhere until after everything is loaded.
 				//Okay, just make sure _timeoutTime is used in OnStarted like other Wait actions. But do have to Handle it here to NOT save _elevator.
 
-				//Need to re-do OnStarted:
-				hash["_updatedOnce"] = false;
-
 				//No special loading needed. OnStarted should check _timeoutTime.
 			}
 
@@ -296,16 +333,6 @@ namespace BetterPlacement
 			else if (action is Game.AI.Actions.ActionWaitSeated actionWaitSeated)
 			{
 
-			}
-			*/
-
-			/*
-			 * ActionFollowPath simply isn't saved and its entire Script is tossed out.
-			else if (action is Game.AI.Actions.ActionFollowPath actionFollowPath)
-			{
-				return new Hashtable();
-
-				//#TYPE will be set. On load, just toss this out.
 			}
 			*/
 
@@ -340,7 +367,6 @@ namespace BetterPlacement
 			{
 
 			}
-			
 			else if (action is Game.AI.Actions.ActionHotelCheckIn actionHotelCheckIn)
 			{
 
@@ -652,11 +678,10 @@ namespace BetterPlacement
 					Log.Debug($"---Deserializing Queue!{e}:{e.id}");
 					try
 					{
-						ArrayList scripts = Game.Game.serv.serializer.Deserialize(scriptHash["script_queue"], typeof(ArrayList)) as ArrayList;
+						List<Script> scripts = Game.Game.serv.serializer.Deserialize(scriptHash["script_queue"], typeof(List<Script>)) as List<Script>;
 						Log.Debug($"---Deserialzed Queue {e}:{e.id} : {scripts}:{scripts.Count}");
-						foreach (object obj in scripts)
-							if (obj is Script script)//Of course it is though
-								queue.Add(script);
+						foreach (Script script in scripts)
+							queue.Add(script);
 					}
 					catch (Exception ex)
 					{
@@ -679,6 +704,7 @@ namespace BetterPlacement
 		public static bool Prefix(ref object __result, object value, Type targettype)
 		{
 			//Log.Debug($"DeSerializing maybe ({targettype})");
+
 			//So if we let this go on its own way, it'll deserialize Script as an enumerable and skip over the other fields.
 			if (value is Hashtable hash && hash.ContainsKey(Game.Game.serv.serializer.TYPEKEY) &&
 				Game.Game.serv.serializer.FindTypeByName(hash[Game.Game.serv.serializer.TYPEKEY] as string) is Type type &&
@@ -695,7 +721,7 @@ namespace BetterPlacement
 
 				//I could ALMOST use this:
 				//Game.Game.serv.serializer.DeserializeIntoClassOrStruct(value, obj); 
-				//This should read fields of GameScript, Script, and the SmartQueue<Action> since they are saved above as such.
+				//This should read fields ---
 				//But _queue is private and it'll not load that. So just do it manual.
 
 				if (script is GameScript gameScript)
@@ -704,11 +730,9 @@ namespace BetterPlacement
 
 				if (hash.ContainsKey("_queue"))
 				{
-					ArrayList actions = Game.Game.serv.serializer.Deserialize(hash["_queue"], typeof(ArrayList)) as ArrayList;
-					foreach (var obj in actions)
-						if (obj is SomaSim.AI.Action action)
-							script.Add(action);
-					//else oh geez what's going on
+					List< SomaSim.AI.Action > actions = Game.Game.serv.serializer.Deserialize(hash["_queue"], typeof(List<SomaSim.AI.Action>)) as List<SomaSim.AI.Action>;
+					foreach (var action in actions)
+						script.Add(action);
 				}
 
 				__result = script;
@@ -750,11 +774,63 @@ namespace BetterPlacement
 
 			return TypeUtils.GetMemberType(i);
 		}
+
+		//internal void DeserializeIntoClassOrStruct(object value, object target)
+		public static bool Prefix(object value, object target)
+		{
+			//Automatic deserialzer can't handle ActionFollowPath's Queue. Because it uses Reflection to find "Add" method and Queue doesn't have it. Jfffff.
+			if (target is ActionFollowPath actionFollowPath)
+			{
+				Hashtable hash = value as Hashtable;
+				Log.Debug($"---Deser ActionFollowPath -> ({actionFollowPath})");
+
+				SaveLoadUtils.DeserializeSingleKey(hash, "speedwobble", delegate (float x) { actionFollowPath.speedwobble = x; });
+				SaveLoadUtils.DeserializeSingleKey(hash, "_type", delegate (PathModType x) { actionFollowPath._type = x; });
+				SaveLoadUtils.DeserializeSingleKey(hash, "_delivery", delegate (bool x) { actionFollowPath._delivery = x; });
+				SaveLoadUtils.DeserializeSingleKey(hash, "_updatedOnce", delegate (bool x) { actionFollowPath._updatedOnce = x; });
+
+				if (hash.ContainsKey("_path"))
+				{
+					List<PathElement> paths = Game.Game.serv.serializer.Deserialize(hash["_path"], typeof(List<PathElement>)) as List<PathElement>;
+					Log.Debug($"_path is:{paths}:{paths.Count}");
+					paths.Reverse();//for enqueing
+					foreach (PathElement p in paths)
+					{
+							Log.Debug($"_path elem PathElement: {p}");
+							actionFollowPath._path.Enqueue(p);
+					}
+				}
+				Log.Debug($"---Deser'd ActionFollowPath -> [{string.Join(", ", actionFollowPath._path.Select(pe => $"({pe.x},{pe.y}:{pe.speed})").ToArray())}]");
+
+				return false;
+			}
+			return true;
+		}
+
 	}
+
+
+	//Can't do CreateInstance because ActionFollowPath has no default constructor geez.
+	[HarmonyPatch(typeof(Serializer), nameof(Serializer.CreateInstance))]
+	public static class LoadActionCreateActionFollowPath
+	{
+		//private object CreateInstance(Type type, int length)
+		public static bool Prefix(ref object __result, Type type)
+		{
+			if(type == typeof(ActionFollowPath))
+			{
+				__result = new ActionFollowPath(new Queue<PathElement>(), 0, false);
+				return false;
+			}
+			return true;
+		}
+	}
+
 
 	//TODO: Patch OnStarted to use _endTime for a few Actions, which require OnStarted called to setup other things, which would re-write _endTime
 
-	//TODO save anims? or restart anims.
+	//TODO save anims? or restart anims. also the cart? Is is that simply part of the stack ezpz.
+	//ActionNavigate sets peep.SetUsingCart. 
 
 	//TODO save being on stairs? ELAVATORS?.
 }
