@@ -12,6 +12,7 @@ using Game.Session.Entities;
 using Game.Session.Entities.Data;
 using Game.Session.Board;
 using Game.Session.Sim;
+using Game.Services;
 using Game.Components;
 using SomaSim;
 using SomaSim.AI;
@@ -22,7 +23,7 @@ using Game.AI.Actions;
 namespace BetterPlacement
 {
 	//People would go to their office when the game was loaded.
-	//This was because they though they weren't in the building
+	//This was because they thought they weren't in the building
 	//This is because the building wasn't loaded
 	//This is because the Unity GameObjects created during loading were 'active' and therefore could call 'Update' before loading finished
 
@@ -52,9 +53,9 @@ namespace BetterPlacement
 		}
 	}
 
+
 	/* Obsolete now that current actions are saved:
 	 * Other Pause actions didn't have a place to save remaining time globally anyway.
-
 
 	//#2 problem is that task progress wasn't saved.
 	//Simply enough, you just need to lower the duration of the task while it is being worked on.
@@ -78,6 +79,7 @@ namespace BetterPlacement
 	}
 	*/
 
+
 	[HarmonyPatch(typeof(EntityManager), nameof(EntityManager.SerializeEntity))]
 	public static class SaveEntityScript
 	{
@@ -90,38 +92,38 @@ namespace BetterPlacement
 			if (e.components.script?.queue is GameScriptQueue queue)
 			{
 				Log.Debug($"---Saving {e}:{e.id}");
-				Hashtable script = new Hashtable();
+				Hashtable scriptHash = new Hashtable();
+
+				//This would be easy if there wasn't a reference to Agent. Seems like this is the one place in code it's not an id but an actual Entity reference.
+				Hashtable context = new Hashtable();
 				GameActionContext ctx = queue.context;
 				if (ctx.targetid != 0)
-					script.SerAdd("targetid", ctx.targetid);
+					context.SerAdd("targetid", ctx.targetid);
 				if (ctx.targetpos.HasValue)
-					script.SerAdd("targetpos", ctx.targetpos.Value);
+					context.SerAdd("targetpos", ctx.targetpos.Value);
 				if (ctx.onfail != null)
-					script.SerAdd("onfail", ctx.onfail);
-				
-				script.SerAdd("agent_id", ctx.agent.id);
-				//On load, resolve GameScriptQueue.agent from agent_id
+					context.SerAdd("onfail", ctx.onfail);
+				scriptHash["context"] = context;
 
 
-				Log.Debug($"---Try save {queue}");
 				try
 				{
 					//Serializing queue itself will be handled as an enumerable
 					//( which assumes the enumerable has no other data to save, so it is saved above)
-					script.SerAdd("script_queue", queue);
+					scriptHash.SerAdd("script_queue", queue);
 				}
 				catch (Exception ex)
 				{
-					Log.Debug($"---FAIL: {ex}\n{ex.StackTrace}");
+					Log.Error($"---FAIL saving script queue for Saving {e}:{e.id}\n{ex}");
 				}
-				Log.Debug("---saved!");
 
-				__result["script"] = script;
+				__result["script"] = scriptHash;
 			}
 		}
 	}
 
 
+	//Serialize would catch Script as a IEnumeramble and skip right over the other fields.
 	[HarmonyPatch(typeof(Serializer), nameof(Serializer.SerializeEnumerable))]
 	public static class SaveScript
 	{
@@ -129,21 +131,25 @@ namespace BetterPlacement
 
 		public static bool Prefix(ref object __result, EntityManager __instance, IEnumerable list)
 		{
-			Log.Debug($"SerializeEnumerable:: {list} ::: {list.GetType()}");
 			if (list is Script script)
 			{
-				Log.Debug($"---Serializing {script} ::: {script.GetType()}");
 				Hashtable hash = new Hashtable();
+
+				//so that the deserializer knows how to deserialize it inside the ScriptQueue
+				//That being said, still have to override it so it deserializes all the fields and not just the enumerable part.
+				hash[Game.Game.serv.serializer.TYPEKEY] = script.GetType().FullName;
 
 				if (script is GameScript gameScript)
 					hash["task"] = gameScript.task;
-				hash["name"] = script.Name;
-				//hash["action_queue"] = $"DEBUG TEST {script._queue.ToArray().Length} actions";
-				hash["action_queue"] = Game.Game.serv.serializer.Serialize(script._queue, true);
+				hash["Name"] = script.Name;
+
+				//Just ignore this entire script if the action includes FollowPath. It needs to be regenerated from ActionNavigate.
+				if(!script.Any(a => a is ActionFollowPath))
+					hash["_queue"] = Game.Game.serv.serializer.Serialize(script._queue, true);
 
 				__result = hash;//SerializeEnumerable returns ArrayList even though the place that uses it only needs an object so this should work? 
+				// I do have to override deserialize - but otherwise it would only deserialize the enumerable part, not thinking about other members.
 
-				Log.Debug($"---Serialed!");
 				return false;
 			}
 			return true;
@@ -157,7 +163,6 @@ namespace BetterPlacement
 		//private object SerializeClassOrStruct(object value, bool specifyType)
 		public static bool Prefix(ref object __result, object value, ref bool specifyType)
 		{
-			Log.Debug($"SerializeClassOrStruct:: {value} ::: {value.GetType()}");
 			if (value is SomaSim.AI.Action action)
 			{
 				 //Jesus blimey for real - Enumerable serialization only writes their element's type if the enumerable itself is not generic.
@@ -168,8 +173,6 @@ namespace BetterPlacement
 
 				if (HandleAction(action) is Hashtable hash)
 				{
-					Log.Debug($"---Handled {action} : {string.Join(", ", (from object x in hash.Keys select x.ToString()).ToArray())}");
-
 					//Something special was done in HandleAction. But here we handle this:
 					hash[Game.Game.serv.serializer.TYPEKEY] = action.GetType().FullName;
 
@@ -187,39 +190,26 @@ namespace BetterPlacement
 			return true;
 		}
 
-		public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-		{
-			MethodInfo GetMembersInfo = AccessTools.Method(typeof(TypeUtils), nameof(TypeUtils.GetMembers), new Type[] { typeof(object) });
-
-			MethodInfo GetMembersForActionsInfo = AccessTools.Method(typeof(SaveAction), nameof(SaveAction.GetMembersForActionsInfo));
-
-			foreach(CodeInstruction inst in instructions)
-			{
-				if (inst.Calls(GetMembersInfo))
-				{
-					yield return new CodeInstruction(OpCodes.Call, GetMembersForActionsInfo);
-				}
-				else
-					yield return inst;
-			}
-		}
+		public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) =>
+			HarmonyLib.Transpilers.MethodReplacer(instructions,
+				AccessTools.Method(typeof(TypeUtils), nameof(TypeUtils.GetMembers), new Type[] { typeof(object) }),
+				AccessTools.Method(typeof(SaveAction), nameof(SaveAction.GetMembersForActionsObj)));
 
 		//Omg seriously, did the game NOT SAVE DATA because the field was PRIVATE?
 		//yeeeahhhh and it DID save const values - but checked the value against the default, which of course, was the same, so no value was saved in the end.
 		//And it saved Properties - which nothing being saved had properties anyway.
 		//public static List<MemberInfo> GetMembers(object obj)
-		public static List<MemberInfo> GetMembersForActionsInfo(object obj)
+		public static List<MemberInfo> GetMembersForActionsObj(object obj) =>
+			GetMembersForActionsType(obj.GetType());
+
+		public static List<MemberInfo> GetMembersForActionsType(Type type)
 		{
-			if (obj is SomaSim.AI.Action action)
-			{
-				List<MemberInfo> fields = action.GetType().GetMembers(
-					BindingFlags.Public
-			| BindingFlags.NonPublic
-			| BindingFlags.Instance).Where(mi => mi is FieldInfo).ToList();
-				Log.Debug($"Fields ({fields.Count}) for {obj.GetType()} are {string.Join(", ", fields.Select(f => f.Name).ToArray())}");
-				return fields;
-			}
-			return TypeUtils.GetMembers(obj);
+			if (typeof(SomaSim.AI.Action).IsAssignableFrom(type))
+				return type.GetMembers(
+					BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+					.Where(mi => mi is FieldInfo).ToList();
+
+			return TypeUtils.GetMembers(type);
 		}
 
 		//Some Actions work with SerializeClassOrStruct, but need one tweak:
@@ -228,9 +218,8 @@ namespace BetterPlacement
 			//These actions need to be restarted to set up callbacks.
 			if (value is ActionWaitSeated || value is ActionWaitInLine)
 			{
-				Log.Debug($"---Resetting _updatedOnce {value} : {value.GetType()}");
 				if (__result is Hashtable hash)
-					hash.Remove("_updatedOnce");//or just hash["_updatedOnce"] = false but that doesn't NEED to be written.
+					hash["_updatedOnce"] = false; //force OnStarted to run
 
 				//No special loading - their OnStarted just needs a patch use the loaded _endTime
 			}
@@ -257,17 +246,6 @@ namespace BetterPlacement
 			*/
 
 			//There's actually not a whole lot that need special handling.
-
-
-			//On load, an ActionFollowPath should be discarded, and the ActionNavigate (that should come next) will create a new path when run.
-			//ActionNavigate sets up things that ActionFollowPath needs, which aren't saved.
-			//That's maybe a one-frame hicucp, but easier than figuring what to save for pathing.
-			else if (action is Game.AI.Actions.ActionFollowPath actionFollowPath)
-			{
-				return new Hashtable();
-
-				//#TYPE will be set. On load, just toss this out.
-			}
 			//ActionNavigate needs to be re-run to re-generate ActionFollowPath
 			else if (action is Game.AI.Actions.ActionNavigate actionNavigate)
 			{
@@ -279,6 +257,7 @@ namespace BetterPlacement
 
 				//All the other "_" members are set in OnStarted and don't need to be saved!
 				//Luckily the GridCell doesn't need to be saved by reference at all!
+				//The context of GameScriptQueue should be enough for this to run
 				hash["delivery"] = actionNavigate.delivery;
 
 				//No special loading is needed!
@@ -294,19 +273,21 @@ namespace BetterPlacement
 				hash["_complained"] = actionWaitForElevator._complained;
 				hash["entry"] = actionWaitForElevator.entry;
 
-				hash["_elevator_id"] = actionWaitForElevator._elevator.id;// <- this here, why this action can't be just saved.
+				//this here, why this action can't be just saved. _elevator is a reference to an Entity.
+				//hash["_elevator_id"] = actionWaitForElevator._elevator.id;
+				//Of course, dang it, how would I resolve this reference? I'd need to save that ID somewhere until after everything is loaded.
+				//Okay, just make sure _timeoutTime is used in OnStarted like other Wait actions. But do have to Handle it here to NOT save _elevator.
 
-				//hash["_updatedOnce"] = actionWaitForElevator._updatedOnce;//automatically handled above. Of course this turned out to be the only action that would need this.
+				//Need to re-do OnStarted:
+				hash["_updatedOnce"] = false;
 
-				//This cannot simply be restarted, since _timeoutTime would get reset.
-				//That's similar to WaitInLine/Seated, but then we still need to skip saving _elavator here anyway, so we might as well just resolve that reference on load
-
-				//ON load, resolve reference to _elevator.
+				//No special loading needed. OnStarted should check _timeoutTime.
 			}
 
 			/*
 			 * These Wait actions have OnStarted actions that set up something(callbacks)
-			 * This can actually be saved normally, loaded normally
+			 * saving it will be handled in the Postfix - as everything else works fine (albeit with private members allowed)
+			 * Loading will work normal (albeit with private members allowed)
 			 * But its OnStarted needs a patch to use _endTime if it exists instead of resetting it
 			
 			else if (action is Game.AI.Actions.ActionWaitInLine actionWaitInLine)
@@ -315,6 +296,16 @@ namespace BetterPlacement
 			else if (action is Game.AI.Actions.ActionWaitSeated actionWaitSeated)
 			{
 
+			}
+			*/
+
+			/*
+			 * ActionFollowPath simply isn't saved and its entire Script is tossed out.
+			else if (action is Game.AI.Actions.ActionFollowPath actionFollowPath)
+			{
+				return new Hashtable();
+
+				//#TYPE will be set. On load, just toss this out.
 			}
 			*/
 
@@ -607,4 +598,163 @@ namespace BetterPlacement
 			return hash;
 		}
 	}
+
+
+	// ----------------
+	//  --- LOADING ---
+	// ----------------
+
+	[HarmonyPatch(typeof(EntityManager), nameof(EntityManager.LoadAndCreateEntity))]
+	public static class LoadEntityScript
+	{
+		//public LoadEntityResult LoadAndCreateEntity(Hashtable data, List<string> mods);
+		public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+		{
+			MethodInfo CreateByTemplateInfo = AccessTools.Method(typeof(EntityManager), nameof(EntityManager.CreateByTemplate));
+			MethodInfo AfterCreateByTemplate = AccessTools.Method(typeof(LoadEntityScript), nameof(AfterCreateByTemplate));
+
+			foreach (var inst in instructions)
+			{
+				yield return inst;
+				if (inst.Calls(CreateByTemplateInfo))
+				{
+					yield return new CodeInstruction(OpCodes.Ldarg_1);//Hashtable data
+					yield return new CodeInstruction(OpCodes.Call, AfterCreateByTemplate);//AfterCreateByTemplate(entity, data) => entity
+				}
+			}
+		}
+
+		//public Entity CreateByTemplate(EntityTemplate configs, int id = 0, EntityData savedata = null)
+		public static Entity AfterCreateByTemplate(Entity e, Hashtable entityHash)
+		{
+			if (!entityHash.ContainsKey("script")) return e;
+
+			if (e.components.script?.queue is GameScriptQueue queue)
+			{
+				Log.Debug($"---Loading GameScriptQueue {e}:{e.id}");
+				Hashtable scriptHash = entityHash["script"] as Hashtable;
+
+				//QueueContext has been created by the component and agent set, now load in other values:
+				//Can't DeserializeIntoClassOrStruct as it hit null refs - TypeUtils.GetMemberType(memberInfo) for type GridPos? being null I guess?
+				if (scriptHash.ContainsKey("context"))
+				{
+					Hashtable contextHash = scriptHash["context"] as Hashtable;
+					GameActionContext ctx = queue.context;
+
+					SaveLoadUtils.DeserializeSingleKey(contextHash, "targetid", delegate (int x) { ctx.targetid = x; });
+					SaveLoadUtils.DeserializeSingleKey(contextHash, "targetpos", delegate (GridPosF x) { ctx.targetpos = x; });
+					SaveLoadUtils.DeserializeSingleKey(contextHash, "onfail", delegate (string x) { ctx.onfail = x; });
+				}
+
+				//Scripts!
+				if (scriptHash.ContainsKey("script_queue"))
+				{
+					Log.Debug($"---Deserializing Queue!{e}:{e.id}");
+					try
+					{
+						ArrayList scripts = Game.Game.serv.serializer.Deserialize(scriptHash["script_queue"], typeof(ArrayList)) as ArrayList;
+						Log.Debug($"---Deserialzed Queue {e}:{e.id} : {scripts}:{scripts.Count}");
+						foreach (object obj in scripts)
+							if (obj is Script script)//Of course it is though
+								queue.Add(script);
+					}
+					catch (Exception ex)
+					{
+						Log.Error($"---FAIL LOADING Q?!??!: {ex}");
+					}
+				}
+				Log.Debug($"---Done loading {e}:{e.id}");
+			}
+			else
+				Log.Error($"{e}:{e.id} has no ScriptComponent Queue to load into!");
+
+			return e;
+		}
+	}
+
+	[HarmonyPatch(typeof(Serializer), nameof(Serializer.Deserialize), new Type[] { typeof(object), typeof(Type)})]
+	public static class LoadScript
+	{
+		//public object Deserialize(object value, Type targettype = null)
+		public static bool Prefix(ref object __result, object value, Type targettype)
+		{
+			//Log.Debug($"DeSerializing maybe ({targettype})");
+			//So if we let this go on its own way, it'll deserialize Script as an enumerable and skip over the other fields.
+			if (value is Hashtable hash && hash.ContainsKey(Game.Game.serv.serializer.TYPEKEY) &&
+				Game.Game.serv.serializer.FindTypeByName(hash[Game.Game.serv.serializer.TYPEKEY] as string) is Type type &&
+				typeof(Script).IsAssignableFrom(type))
+			{
+				//FFFUUUUUUUU No default constructor for GameScript.
+				//Script script = Activator.CreateInstance(type) as Script;
+				Script script;
+				if (type == typeof(GameScript))
+					script = new GameScript(new List<SomaSim.AI.Action>());
+				else
+					script = new Script();
+
+
+				//I could ALMOST use this:
+				//Game.Game.serv.serializer.DeserializeIntoClassOrStruct(value, obj); 
+				//This should read fields of GameScript, Script, and the SmartQueue<Action> since they are saved above as such.
+				//But _queue is private and it'll not load that. So just do it manual.
+
+				if (script is GameScript gameScript)
+					SaveLoadUtils.DeserializeSingleKey(hash, "task", delegate (string x) { gameScript.task = x; });
+				SaveLoadUtils.DeserializeSingleKey(hash, "Name", delegate (string x) { script.Name = x; });
+
+				if (hash.ContainsKey("_queue"))
+				{
+					ArrayList actions = Game.Game.serv.serializer.Deserialize(hash["_queue"], typeof(ArrayList)) as ArrayList;
+					foreach (var obj in actions)
+						if (obj is SomaSim.AI.Action action)
+							script.Add(action);
+					//else oh geez what's going on
+				}
+
+				__result = script;
+
+				return false;
+			}
+			return true;
+		}
+	}
+
+
+	//DeserializeIntoClassOrStruct would only used public fields to deterine what data to load
+	//So even though the data to load included a value for a field - it would just not use that.
+	//So let's get private fields in there for Actions.
+	//DeserializeIntoClassOrStruct calls Serializer.GetMemberInfos, and is the only one to call it, so patch that to get all fields
+	[HarmonyPatch(typeof(Serializer), nameof(Serializer.GetMemberInfos))]
+	public static class LoadAction
+	{
+		public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) =>
+			HarmonyLib.Transpilers.MethodReplacer(instructions,
+				AccessTools.Method(typeof(TypeUtils), nameof(TypeUtils.GetMembers), new Type[] { typeof(Type) }),
+				AccessTools.Method(typeof(SaveAction), nameof(SaveAction.GetMembersForActionsType)));
+	}
+
+	[HarmonyPatch(typeof(Serializer), nameof(Serializer.DeserializeIntoClassOrStruct))]
+	public static class LoadActionPrivate
+	{
+		//patch the call to GetMemberType to fucking allow private fields for fucks goddamn sake. Then loading _endTime should work.
+		public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions) =>
+			HarmonyLib.Transpilers.MethodReplacer(instructions,
+				AccessTools.Method(typeof(TypeUtils), nameof(TypeUtils.GetMemberType)),
+				AccessTools.Method(typeof(LoadActionPrivate), nameof(LoadActionPrivate.GetMemberTypeForAction)));
+
+		//public static Type GetMemberType(MemberInfo i)
+		public static Type GetMemberTypeForAction(MemberInfo i)
+		{
+			if (typeof(SomaSim.AI.Action).IsAssignableFrom(i.DeclaringType) && i is FieldInfo fi)
+				return fi.FieldType;
+
+			return TypeUtils.GetMemberType(i);
+		}
+	}
+
+	//TODO: Patch OnStarted to use _endTime for a few Actions, which require OnStarted called to setup other things, which would re-write _endTime
+
+	//TODO save anims? or restart anims.
+
+	//TODO save being on stairs? ELAVATORS?.
 }
