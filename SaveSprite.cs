@@ -49,7 +49,6 @@ namespace BetterPlacement
 
 				if (!sprite.IsVisible)
 				{
-					Log.Debug($"---saving dose alphas ({string.Join(", ", sprite.vis.alphas.Select(f => $"{f}").ToArray())})");
 					spriteHash.SerAdd("vis_alphas", Game.Game.serv.serializer.Serialize(sprite.vis.alphas));
 				}
 
@@ -87,7 +86,6 @@ namespace BetterPlacement
 					if (spriteHash.ContainsKey("vis_alphas"))
 					{
 						List<float> visAlphas = Game.Game.serv.serializer.Deserialize(spriteHash["vis_alphas"], typeof(List<float>)) as List<float>;
-						Log.Debug($"---Got dem alphas ({string.Join(", ", visAlphas.Select(f => $"{f}").ToArray())})");
 						visAlphas.CopyTo(sprite.vis.alphas);
 					}
 
