@@ -826,11 +826,37 @@ namespace BetterPlacement
 		}
 	}
 
+	[HarmonyPatch(typeof(PeepTracker), nameof(PeepTracker.OnAfterLoad))]
+	public static class AfterLoadDontScrewWithPos
+	{
+		//public void OnAfterLoad()
+		public static bool Prefix(PeepTracker __instance)
+		{
+
+			Grid grid = Game.Game.ctx.board.grid;
+			foreach (Entity allEntity in Game.Game.ctx.entityman.GetAllEntities())
+			{
+				if (allEntity.components.peep != null)
+				{
+					GridPos gridpos = allEntity.data.placement.gridpos;
+					__instance.MovePeep(allEntity, null, (GridPosF)gridpos);
+
+					//And the game code here would now round the worldpos y down.
+					//I imagine that's because people might have been interupted walking up stairs and would be floating, BECAUSE THE GAME DIDN'T SAVE THEIR ACTION STATE TO BEGIN WITH
+					//Now that I have save/loading walking up stairs working, it doesn't need to do that anymore.
+				}
+			}
+			return false;
+		}
+	}
+
 
 	//TODO: Patch OnStarted to use _endTime for a few Actions, which require OnStarted called to setup other things, which would re-write _endTime
 
-	//TODO save anims? or restart anims. also the cart? Is is that simply part of the stack ezpz.
-	//ActionNavigate sets peep.SetUsingCart. 
+	//TODO save being elevators?
 
-	//TODO save being on stairs? ELAVATORS?. worldpos y is reset on load it seems.
+
+	//TODO: Plan ahead, build over construction flors + rubble
+
+	//TODO: interupt people going to office with tasks (builders leaving constructed floors not building the thing you placed right on top of them)
 }
