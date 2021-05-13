@@ -855,6 +855,13 @@ namespace BetterPlacement
 	//if (value is ActionWaitSeated || value is ActionWaitInLine || value is ActionWaitForElevator)
 	//These need to be restarted on load, so use their loaded values:
 
+	/*
+	 * 
+	 * TODO, though, these actions don't track their own actual time but their timeout time.
+	 * The restaurant is the one who tracks the time for ActionWaitSeated when it does AddToSitting.
+	 * Of course it'd be near impossible to resolve which sitting time refers to which person. So that timer will be restarted.
+	 * Also, to play the correct animation, we'd need to save ReservationsComponent in the restaurant so they have an achor point to sit at. (created by ActionChangePatronReservation)
+	 * instead they'll play the fallbackanims peepeat. Not so bad. Also applies to ActionWaitVending.
 	[HarmonyPatch(typeof(ActionWaitSeated), nameof(ActionWaitSeated.OnStarted))]
 	public static class ActionWaitSeatedRememberValues
 	{
@@ -868,6 +875,13 @@ namespace BetterPlacement
 				__instance._endTime = __state;
 		}
 	}
+	*/
+
+	//Waiting in line is easy. When space is available, we get callback and end the action.
+	//After timeout, it fails.
+	//Of course that means since people sitting have their time reset, the wait time here should also be reset. Shit
+	//Okay. Nevermind about using saved timeout values here since they're unfair with longer expected wait times
+	/*
 	[HarmonyPatch(typeof(ActionWaitInLine), nameof(ActionWaitInLine.OnStarted))]
 	public static class ActionWaitInLineRememberValues
 	{
@@ -881,6 +895,9 @@ namespace BetterPlacement
 				__instance._endTime = __state;
 		}
 	}
+	*/
+
+	//Honestly I don't think elevators really queue or take time anyway. This game doesn't have a detailed elevator system, just static wait times.
 	[HarmonyPatch(typeof(ActionWaitForElevator), nameof(ActionWaitForElevator.OnStarted))]
 	public static class ActionWaitForElevatorRememberValues
 	{
@@ -894,11 +911,4 @@ namespace BetterPlacement
 				__instance._timeoutTime = __state;
 		}
 	}
-
-	//TODO save being elevators?
-
-
-	//TODO: Plan ahead, build over construction flors + rubble
-
-	//TODO: interupt people going to office with tasks (builders leaving constructed floors not building the thing you placed right on top of them)
 }

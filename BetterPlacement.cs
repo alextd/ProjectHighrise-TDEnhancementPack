@@ -32,5 +32,11 @@ namespace BetterPlacement
 		public static void Debug(object data) => logger.LogDebug(data);
 		public static void Warning(object data) => logger.LogWarning(data);
 	}
+
+	//TODO: Plan ahead, build over construction flors + rubble
+
+	//TODO: interupt people going to office with tasks (builders leaving constructed floors not building the thing you placed right on top of them)
+
+	//TODO: Track time for seated people in ServiceComponent after load
 }
 
