@@ -42,6 +42,8 @@ namespace BetterPlacement
 
 				//Using PeepComponent.PlayAnimation to see what is set.
 				spriteHash.SerAdd("_animname", sprite._animname);
+				if(e.components.peep.isUsingCart)
+					spriteHash.SerAdd("usingcart", true);
 				//turns out not much else is needed to be saved.
 				//I don't think I'll dig into setting exact anim frames.
 
@@ -66,6 +68,16 @@ namespace BetterPlacement
 				if (entityHash["sprite"] is Hashtable spriteHash)
 				{
 					SaveLoadUtils.DeserializeSingleKey<string>(spriteHash, "_animname", x => sprite.SetAnimation(x));
+					if (e.components.peep is PeepComponent peep)
+					{
+						SaveLoadUtils.DeserializeSingleKey(spriteHash, "usingcart",
+							delegate (bool x)
+							{
+								peep.SetUsingCart(x);
+								//I'm pretty sure SetUsingCart tries to call UpdateCartAnimation when it changes, but the bool is the opposite of what it should be.
+								peep.UpdateCartAnimation(); //Probably would be redundant to check true since we're already here
+							});
+					}
 					sprite.vis.RecomputeAlphaAndUpdateVisibility(e);
 				}
 			}
