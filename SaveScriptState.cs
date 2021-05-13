@@ -147,7 +147,7 @@ namespace BetterPlacement
 				hash["_queue"] = Game.Game.serv.serializer.Serialize(script._queue, true);
 
 				__result = hash;//SerializeEnumerable returns ArrayList even though the place that uses it only needs an object so this should work? 
-				// I do have to override deserialize - but otherwise it would only deserialize the enumerable part, not thinking about other members.
+												// I do have to override deserialize - but otherwise it would only deserialize the enumerable part, not thinking about other members.
 
 				return false;
 			}
@@ -730,7 +730,7 @@ namespace BetterPlacement
 
 				if (hash.ContainsKey("_queue"))
 				{
-					List< SomaSim.AI.Action > actions = Game.Game.serv.serializer.Deserialize(hash["_queue"], typeof(List<SomaSim.AI.Action>)) as List<SomaSim.AI.Action>;
+					List<SomaSim.AI.Action> actions = Game.Game.serv.serializer.Deserialize(hash["_queue"], typeof(List<SomaSim.AI.Action>)) as List<SomaSim.AI.Action>;
 					foreach (var action in actions)
 						script.Add(action);
 				}
@@ -796,8 +796,8 @@ namespace BetterPlacement
 					paths.Reverse();//for enqueing
 					foreach (PathElement p in paths)
 					{
-							Log.Debug($"_path elem PathElement: {p}");
-							actionFollowPath._path.Enqueue(p);
+						Log.Debug($"_path elem PathElement: {p}");
+						actionFollowPath._path.Enqueue(p);
 					}
 				}
 				Log.Debug($"---Deser'd ActionFollowPath -> [{string.Join(", ", actionFollowPath._path.Select(pe => $"({pe.x},{pe.y}:{pe.speed})").ToArray())}]");
@@ -817,7 +817,7 @@ namespace BetterPlacement
 		//private object CreateInstance(Type type, int length)
 		public static bool Prefix(ref object __result, Type type)
 		{
-			if(type == typeof(ActionFollowPath))
+			if (type == typeof(ActionFollowPath))
 			{
 				__result = new ActionFollowPath(new Queue<PathElement>(), 0, false);
 				return false;
@@ -851,7 +851,49 @@ namespace BetterPlacement
 	}
 
 
-	//TODO: Patch OnStarted to use _endTime for a few Actions, which require OnStarted called to setup other things, which would re-write _endTime
+	//Following up from above:
+	//if (value is ActionWaitSeated || value is ActionWaitInLine || value is ActionWaitForElevator)
+	//These need to be restarted on load, so use their loaded values:
+
+	[HarmonyPatch(typeof(ActionWaitSeated), nameof(ActionWaitSeated.OnStarted))]
+	public static class ActionWaitSeatedRememberValues
+	{
+		public static void Prefix(ActionWaitSeated __instance, out float __state)
+		{
+			__state = __instance._endTime;
+		}
+		public static void Postfix(ActionWaitSeated __instance, float __state)
+		{
+			if (__state > 0)
+				__instance._endTime = __state;
+		}
+	}
+	[HarmonyPatch(typeof(ActionWaitInLine), nameof(ActionWaitInLine.OnStarted))]
+	public static class ActionWaitInLineRememberValues
+	{
+		public static void Prefix(ActionWaitInLine __instance, out float __state)
+		{
+			__state = __instance._endTime;
+		}
+		public static void Postfix(ActionWaitInLine __instance, float __state)
+		{
+			if (__state > 0)
+				__instance._endTime = __state;
+		}
+	}
+	[HarmonyPatch(typeof(ActionWaitForElevator), nameof(ActionWaitForElevator.OnStarted))]
+	public static class ActionWaitForElevatorRememberValues
+	{
+		public static void Prefix(ActionWaitForElevator __instance, out float __state)
+		{
+			__state = __instance._timeoutTime;
+		}
+		public static void Postfix(ActionWaitForElevator __instance, float __state)
+		{
+			if (__state > 0)
+				__instance._timeoutTime = __state;
+		}
+	}
 
 	//TODO save being elevators?
 
