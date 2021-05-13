@@ -96,6 +96,4 @@ namespace BetterPlacement
 			return e;
 		}
 	}
-
-	//todo offite peopel aren't selectable
 }
