@@ -47,6 +47,12 @@ namespace BetterPlacement
 				//turns out not much else is needed to be saved.
 				//I don't think I'll dig into setting exact anim frames.
 
+				if (!sprite.IsVisible)
+				{
+					Log.Debug($"---saving dose alphas ({string.Join(", ", sprite.vis.alphas.Select(f => $"{f}").ToArray())})");
+					spriteHash.SerAdd("vis_alphas", Game.Game.serv.serializer.Serialize(sprite.vis.alphas));
+				}
+
 				__result["sprite"] = spriteHash;
 			}
 		}
@@ -78,6 +84,13 @@ namespace BetterPlacement
 								peep.UpdateCartAnimation(); //Probably would be redundant to check true since we're already here
 							});
 					}
+					if (spriteHash.ContainsKey("vis_alphas"))
+					{
+						List<float> visAlphas = Game.Game.serv.serializer.Deserialize(spriteHash["vis_alphas"], typeof(List<float>)) as List<float>;
+						Log.Debug($"---Got dem alphas ({string.Join(", ", visAlphas.Select(f => $"{f}").ToArray())})");
+						visAlphas.CopyTo(sprite.vis.alphas);
+					}
+
 					sprite.vis.RecomputeAlphaAndUpdateVisibility(e);
 				}
 			}
@@ -85,4 +98,6 @@ namespace BetterPlacement
 			return e;
 		}
 	}
+
+	//todo offite peopel aren't selectable
 }
