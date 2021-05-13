@@ -1,11 +1,28 @@
 # ProjectHighrise-BetterPlacement
-A mod for Project Highrise that makes placing rooms easier, so you don't have to click literally hundreds of times in precise locations.
-In short: shift-click copies that action where available. Shift-click floors to fill floors with rooms. Shift-click tenants to move in all possible tenants.
-Also a few fixes for saving/loading so people don't always forget what they're doing and lose progress.
+A mod for Project Highrise that makes placing rooms easier - Also various other fixes I discovered were needed.
 
 
 To install:
-Use BepInEx (https://github.com/BepInEx/BepInEx), put BetterPlacement.dll in plugins. Todo: explain BepInEx. TL;DR Drop BepInEx into Project Highrise intallation.
+1. Use BepInEx (https://github.com/BepInEx/BepInEx). Todo: explain BepInEx. TL;DR Drop BepInEx into Project Highrise intallation.
+2. Put BetterPlacement.dll in BepInEx/plugins
+3. Verify running game creted BepInEx/LogOutput.log which contains a line "[Message:Better Placement] Wake up!"
+
+
+- Better Placement:
+-- So you don't have to click literally hundreds of times in precise locations.
+-- In short: Use shift-click to copy that click-action where available. Shift-click floors to fill floors with rooms. Shift-click tenants to move in all possible tenants.
+
+- Save/Load actions for people:
+-- Yes the game literally did not even try to save that info. It's not a bug, it simply wasn't a feature to save current action and script, and relied on them to re-start what they were doing - and even that didn't make any attempt to save progress, let alone the scripts that simply won't work when restarted, let alone the scripts that were programatically added and won't be restarted to begin with.
+-- e.g. Hotel guests who haven't checked in would turn around leave, workers building things would stop and go back to the office, before going back to work, which had progress wiped
+-- Save/Load people's current animation (wasn't so big a problem but now that their action is saved, their animation wasn't getting reset on load as they don't start new actions).
+
+- Little things:
+-- You can't select invisible people (ie offsite people next to the busstop, also elevator usage.)
+-- Dialogs for move-in selection are bigger
+--- and scroll faster.
+--- More windows todo later
+--- I assume you have a 1080p monitor
 
 
 To develop code (after BepInEx installed):
