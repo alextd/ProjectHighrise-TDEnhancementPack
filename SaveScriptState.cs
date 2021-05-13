@@ -653,7 +653,7 @@ namespace BetterPlacement
 		//public Entity CreateByTemplate(EntityTemplate configs, int id = 0, EntityData savedata = null)
 		public static Entity AfterCreateByTemplate(Entity e, Hashtable entityHash)
 		{
-			if (!entityHash.ContainsKey("script")) return e;
+			if (!entityHash.ContainsKey("script")) return LoadEntitySprite.AfterCreateByTemplate(e, entityHash);
 
 			if (e.components.script?.queue is GameScriptQueue queue)
 			{
@@ -693,7 +693,7 @@ namespace BetterPlacement
 			else
 				Log.Error($"{e}:{e.id} has no ScriptComponent Queue to load into!");
 
-			return e;
+			return LoadEntitySprite.AfterCreateByTemplate(e, entityHash);
 		}
 	}
 
@@ -832,5 +832,5 @@ namespace BetterPlacement
 	//TODO save anims? or restart anims. also the cart? Is is that simply part of the stack ezpz.
 	//ActionNavigate sets peep.SetUsingCart. 
 
-	//TODO save being on stairs? ELAVATORS?.
+	//TODO save being on stairs? ELAVATORS?. worldpos y is reset on load it seems.
 }
