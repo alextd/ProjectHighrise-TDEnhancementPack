@@ -36,7 +36,11 @@ namespace BetterPlacement
 		//This seems to be a static value inside Unity resource files so I'm going to statically increase it.
 		public static void Postfix(GameObject ____go)
 		{
-			UIUtil.ForceRectSizeHack(____go, ____go.GetComponent<RectTransform>().rect.width, 950);
+			var tr = ____go.GetComponent<RectTransform>();
+			var anchor = tr.anchoredPosition;
+			anchor.y /= 10;//move closer to top of screen
+			tr.anchoredPosition = anchor;
+			UIUtil.ForceRectSizeHack(____go, tr.rect.width, 950);
 		}
 	}
 	[HarmonyPatch(typeof(MoveInTenantsDialog), nameof(MoveInTenantsDialog.InitializeGameObject))]
