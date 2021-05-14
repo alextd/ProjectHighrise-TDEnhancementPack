@@ -89,6 +89,7 @@
     <Compile Include="MoveInDialog.cs" />
     <Compile Include="SaveSprite.cs" />
     <Compile Include="SaveScriptState.cs" />
+    <Compile Include="ZoomToMouse.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\.editorconfig" />
