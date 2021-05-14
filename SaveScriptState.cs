@@ -93,7 +93,6 @@ namespace BetterPlacement
 		{
 			if (e.components.script?.queue is GameScriptQueue queue)
 			{
-				Log.Debug($"---Saving {e}:{e.id}");
 				Hashtable scriptHash = new Hashtable();
 
 				//This would be easy if there wasn't a reference to Agent. Seems like this is the one place in code it's not an id but an actual Entity reference.
@@ -170,7 +169,6 @@ namespace BetterPlacement
 				specifyType = true;
 
 
-				Log.Debug($"---Serializing {action} : {action.GetType()}");
 				if (HandleAction(action) is Hashtable hash)
 				{
 					//Something special was done in HandleAction. But here we handle this:
@@ -657,7 +655,6 @@ namespace BetterPlacement
 
 			if (e.components.script?.queue is GameScriptQueue queue)
 			{
-				Log.Debug($"---Loading GameScriptQueue {e}:{e.id}");
 				Hashtable scriptHash = entityHash["script"] as Hashtable;
 
 				//QueueContext has been created by the component and agent set, now load in other values:
@@ -675,11 +672,9 @@ namespace BetterPlacement
 				//Scripts!
 				if (scriptHash.ContainsKey("script_queue"))
 				{
-					Log.Debug($"---Deserializing Queue!{e}:{e.id}");
 					try
 					{
 						List<Script> scripts = Game.Game.serv.serializer.Deserialize(scriptHash["script_queue"], typeof(List<Script>)) as List<Script>;
-						Log.Debug($"---Deserialzed Queue {e}:{e.id} : {scripts}:{scripts.Count}");
 						foreach (Script script in scripts)
 							queue.Add(script);
 					}
@@ -688,7 +683,6 @@ namespace BetterPlacement
 						Log.Error($"---FAIL LOADING Q?!??!: {ex}");
 					}
 				}
-				Log.Debug($"---Done loading {e}:{e.id}");
 			}
 			else
 				Log.Error($"{e}:{e.id} has no ScriptComponent Queue to load into!");
@@ -703,7 +697,6 @@ namespace BetterPlacement
 		//public object Deserialize(object value, Type targettype = null)
 		public static bool Prefix(ref object __result, object value, Type targettype)
 		{
-			//Log.Debug($"DeSerializing maybe ({targettype})");
 
 			//So if we let this go on its own way, it'll deserialize Script as an enumerable and skip over the other fields.
 			if (value is Hashtable hash && hash.ContainsKey(Game.Game.serv.serializer.TYPEKEY) &&
@@ -782,7 +775,6 @@ namespace BetterPlacement
 			if (target is ActionFollowPath actionFollowPath)
 			{
 				Hashtable hash = value as Hashtable;
-				Log.Debug($"---Deser ActionFollowPath -> ({actionFollowPath})");
 
 				SaveLoadUtils.DeserializeSingleKey(hash, "speedwobble", delegate (float x) { actionFollowPath.speedwobble = x; });
 				SaveLoadUtils.DeserializeSingleKey(hash, "_type", delegate (PathModType x) { actionFollowPath._type = x; });
@@ -792,15 +784,12 @@ namespace BetterPlacement
 				if (hash.ContainsKey("_path"))
 				{
 					List<PathElement> paths = Game.Game.serv.serializer.Deserialize(hash["_path"], typeof(List<PathElement>)) as List<PathElement>;
-					Log.Debug($"_path is:{paths}:{paths.Count}");
 					paths.Reverse();//for enqueing
 					foreach (PathElement p in paths)
 					{
-						Log.Debug($"_path elem PathElement: {p}");
 						actionFollowPath._path.Enqueue(p);
 					}
 				}
-				Log.Debug($"---Deser'd ActionFollowPath -> [{string.Join(", ", actionFollowPath._path.Select(pe => $"({pe.x},{pe.y}:{pe.speed})").ToArray())}]");
 
 				return false;
 			}
