@@ -655,32 +655,33 @@ namespace BetterPlacement
 
 			if (e.components.script?.queue is GameScriptQueue queue)
 			{
-				Hashtable scriptHash = entityHash["script"] as Hashtable;
-
-				//QueueContext has been created by the component and agent set, now load in other values:
-				//Can't DeserializeIntoClassOrStruct as it hit null refs - TypeUtils.GetMemberType(memberInfo) for type GridPos? being null I guess?
-				if (scriptHash.ContainsKey("context"))
+				if (entityHash["script"] is Hashtable scriptHash)
 				{
-					Hashtable contextHash = scriptHash["context"] as Hashtable;
-					GameActionContext ctx = queue.context;
-
-					SaveLoadUtils.DeserializeSingleKey(contextHash, "targetid", delegate (int x) { ctx.targetid = x; });
-					SaveLoadUtils.DeserializeSingleKey(contextHash, "targetpos", delegate (GridPosF x) { ctx.targetpos = x; });
-					SaveLoadUtils.DeserializeSingleKey(contextHash, "onfail", delegate (string x) { ctx.onfail = x; });
-				}
-
-				//Scripts!
-				if (scriptHash.ContainsKey("script_queue"))
-				{
-					try
+					//QueueContext has been created by the component and agent set, now load in other values:
+					//Can't DeserializeIntoClassOrStruct as it hit null refs - TypeUtils.GetMemberType(memberInfo) for type GridPos? being null I guess?
+					if (scriptHash.ContainsKey("context"))
 					{
-						List<Script> scripts = Game.Game.serv.serializer.Deserialize(scriptHash["script_queue"], typeof(List<Script>)) as List<Script>;
-						foreach (Script script in scripts)
-							queue.Add(script);
+						Hashtable contextHash = scriptHash["context"] as Hashtable;
+						GameActionContext ctx = queue.context;
+
+						SaveLoadUtils.DeserializeSingleKey(contextHash, "targetid", delegate (int x) { ctx.targetid = x; });
+						SaveLoadUtils.DeserializeSingleKey(contextHash, "targetpos", delegate (GridPosF x) { ctx.targetpos = x; });
+						SaveLoadUtils.DeserializeSingleKey(contextHash, "onfail", delegate (string x) { ctx.onfail = x; });
 					}
-					catch (Exception ex)
+
+					//Scripts!
+					if (scriptHash.ContainsKey("script_queue"))
 					{
-						Log.Error($"---FAIL LOADING Q?!??!: {ex}");
+						try
+						{
+							List<Script> scripts = Game.Game.serv.serializer.Deserialize(scriptHash["script_queue"], typeof(List<Script>)) as List<Script>;
+							foreach (Script script in scripts)
+								queue.Add(script);
+						}
+						catch (Exception ex)
+						{
+							Log.Error($"---FAIL LOADING Q?!??!: {ex}");
+						}
 					}
 				}
 			}
