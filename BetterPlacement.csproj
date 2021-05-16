@@ -91,6 +91,7 @@
     <Compile Include="SaveSprite.cs" />
     <Compile Include="SaveScriptState.cs" />
     <Compile Include="StringFixes.cs" />
+    <Compile Include="ViewAllTenants.cs" />
     <Compile Include="ZoomToMouse.cs" />
   </ItemGroup>
   <ItemGroup>
