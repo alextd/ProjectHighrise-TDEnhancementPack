@@ -33,10 +33,27 @@ namespace BetterPlacement
 		public static void Warning(object data) => logger.LogWarning(data);
 	}
 
+	//TODO: view all ads, not just one tenant type
+	// Rewrite RefreshTenantList for 'all' - toggle on/off somewhere.
+	// 	MoveInsDefinition moveInsDefinition = moveins.FindDefByEntryId(_entryid);
+	// foreach moveInDef, 
+	//	MoveInsEntryStatus moveInsEntryStatus = moveins.FindSavedStatus(_entryid);
+	// foreach status,
+	//  Accumulate all candidates
+	// Continue as in RefreshTenantList with more candidates.
+
 	//TODO: Plan ahead, build over construction flors + rubble
+	//TODO: Build and flace floors
+	//TODO: Measure # of cells
+
+	//TODO: Actual loan interest
 
 	//TODO: interupt people going to office with tasks (builders leaving constructed floors not building the thing you placed right on top of them)
 
 	//TODO: Track time for seated people in ServiceComponent after load
+
+	//TODO: POpup/pause on no service warning.
+
+	//TODO: Ability to view ad list without a building
 }
 

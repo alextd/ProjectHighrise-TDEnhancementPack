@@ -29,6 +29,10 @@ namespace BetterPlacement
 	//This is because the building wasn't loaded
 	//This is because the Unity GameObjects created during loading were 'active' and therefore could call 'Update' before loading finished
 
+	//(Also I just learnt a week later)
+	//People who were going offsite would disappear - and be invisible - but on screen and selectable. So this fixes all that too.
+	//It's funny loading up a game, wondering where this bug is, and realizing, oh hey, my patches aren't applied - I fixed that bug.
+
 	//So - simply set them inactive as they are loaded, then activate them all later.
 	//TODO - all unity game objects? Oh well this is enough.
 
