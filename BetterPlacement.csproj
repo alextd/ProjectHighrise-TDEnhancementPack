@@ -92,6 +92,7 @@
     <Compile Include="SaveScriptState.cs" />
     <Compile Include="ScheduleFixer.cs" />
     <Compile Include="StringFixes.cs" />
+    <Compile Include="UtilityNeededTicker.cs" />
     <Compile Include="ViewAllTenants.cs" />
     <Compile Include="ZoomToMouse.cs" />
   </ItemGroup>
