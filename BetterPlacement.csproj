@@ -90,6 +90,7 @@
     <Compile Include="MoveInDialog.cs" />
     <Compile Include="SaveSprite.cs" />
     <Compile Include="SaveScriptState.cs" />
+    <Compile Include="ScheduleFixer.cs" />
     <Compile Include="StringFixes.cs" />
     <Compile Include="ViewAllTenants.cs" />
     <Compile Include="ZoomToMouse.cs" />
