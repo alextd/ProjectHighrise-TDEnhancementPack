@@ -33,16 +33,11 @@ namespace BetterPlacement
 		public static void Warning(object data) => logger.LogWarning(data);
 	}
 
-	//TODO: view all ads, not just one tenant type
-	// Rewrite RefreshTenantList for 'all' - toggle on/off somewhere.
-	// 	MoveInsDefinition moveInsDefinition = moveins.FindDefByEntryId(_entryid);
-	// foreach moveInDef, 
-	//	MoveInsEntryStatus moveInsEntryStatus = moveins.FindSavedStatus(_entryid);
-	// foreach status,
-	//  Accumulate all candidates
-	// Continue as in RefreshTenantList with more candidates.
+	//TODO: Check move in all parking?
 
-	//TODO: Plan ahead, build over construction flors + rubble
+	//TODO: Sort placing services by need
+
+	//TODO: Plan ahead, build over construction floors + rubble
 	//TODO: Build and flace floors
 	//TODO: Measure # of cells
 

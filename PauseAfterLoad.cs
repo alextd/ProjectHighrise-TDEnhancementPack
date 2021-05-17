@@ -32,4 +32,5 @@ namespace BetterPlacement
 		}
 	}
 
+	//TODO other things don't change: UI numbers e.g. money.
 }
