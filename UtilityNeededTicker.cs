@@ -145,12 +145,21 @@ namespace BetterPlacement
 
 		public static void Remove(int id, NotifType type)
 		{
-			TickerEntryUtility ticker;
-			if (!tickers.TryGetValue(id, out ticker)) { }//Shouldn't happen but okay
+			if (tickers.TryGetValue(id, out TickerEntryUtility ticker))
+			{
+				ticker.Remove(type);
 
-			ticker.Remove(type);
+				if (ticker.IsEmpty)
+				{
+					tickers.Remove(id);
+					Game.Game.ctx.hud.tickers.Remove(ticker);
+				}
+			}
+		}
 
-			if(ticker.IsEmpty)
+		public static void Remove(int id)
+		{
+			if (tickers.TryGetValue(id, out TickerEntryUtility ticker))
 			{
 				tickers.Remove(id);
 				Game.Game.ctx.hud.tickers.Remove(ticker);
@@ -180,6 +189,17 @@ namespace BetterPlacement
 			if (!__instance.IsAdded(type)) return;
 
 			UtilityTickerTracker.Remove(__instance.entity.id, type);
+		}
+	}
+
+
+	[HarmonyPatch(typeof(NotifComponent), nameof(NotifComponent.OnBeforeEntityRemoved))]
+	public static class ToggleTickerDestroy
+	{
+		//public override void OnBeforeEntityRemoved(bool shutdown)
+		public static void Prefix(NotifComponent __instance)
+		{
+			UtilityTickerTracker.Remove(__instance.entity.id);
 		}
 	}
 }
