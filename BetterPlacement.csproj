@@ -83,6 +83,7 @@
   <ItemGroup>
     <Compile Include="BetterPlacement.cs" />
     <Compile Include="CantSelectInvisible.cs" />
+    <Compile Include="DialogSizes.cs" />
     <Compile Include="EverythingIsPaintable.cs" />
     <Compile Include="PaintWholeFloor.cs" />
     <Compile Include="PauseAfterLoad.cs" />
