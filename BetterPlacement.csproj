@@ -82,6 +82,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BetterPlacement.cs" />
+    <Compile Include="BetterSorting.cs" />
     <Compile Include="CantSelectInvisible.cs" />
     <Compile Include="DialogSizes.cs" />
     <Compile Include="EverythingIsPaintable.cs" />
