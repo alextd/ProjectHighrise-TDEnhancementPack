@@ -32,9 +32,8 @@ namespace BetterPlacement
 			UIUtil.GetTextMesh(go, "Icon").color = Color.green;
 			UIUtil.GetTextMesh(go, "Text").text = "There are bookable performers";
 
-			UIUtil.GetChild(go, "Text")
-				.AddComponent<UnityEngine.UI.Button>()
-				.onClick.AddListener(() =>Game.Game.serv.dialogs.AddPopup(new Game.UI.Session.Hotels.PerformerListPopup()));
+			go.GetComponent<UnityEngine.UI.Button>()
+				.onClick.AddListener(() => Game.Game.serv.dialogs.AddPopup(new Game.UI.Session.Hotels.PerformerListPopup()));
 
 			UIUtil.GetChild(go, "Close").SetActive(false);
 			UIUtil.GetChild(go, "Ok Button").SetActive(false);

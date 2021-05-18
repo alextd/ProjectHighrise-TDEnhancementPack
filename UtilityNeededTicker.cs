@@ -40,11 +40,8 @@ namespace BetterPlacement
 			UIUtil.GetTextMesh(go, "Text").text = "Utilities Needed";
 			//UIUtil.GetTextMesh(go, "Icon").text = Loc.Get(iconkey);
 
-			UIUtil.GetChild(go, "Text")
-				.AddComponent<UnityEngine.UI.Button>()
-				.onClick.AddListener(delegate () {
-					GoToEntity();
-				});
+			go.GetComponent<UnityEngine.UI.Button>()
+				.onClick.AddListener(() => GoToEntity());
 
 			UIUtil.GetChild(go, "Ok Button").SetActive(false);
 		}
