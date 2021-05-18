@@ -56,7 +56,7 @@ namespace BetterPlacement
 
 		private void OnClose()
 		{
-			Game.Game.ctx.hud.tickers.Remove(this);
+			UtilityTickerTracker.Remove(id);
 		}
 
 		public void Add(NotifType type)
