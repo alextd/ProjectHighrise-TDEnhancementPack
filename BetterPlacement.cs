@@ -33,7 +33,17 @@ namespace BetterPlacement
 		public static void Warning(object data) => logger.LogWarning(data);
 	}
 
+	//TODO: Hotel pickings.
+	// Notif when booking available.
+	// Auto select room to use.
+
+	//TODO: shift-place vertical things up = elevator, util cabinet
+
+	//TODO hotkeys for build menus.
+
 	//TODO: Check move in all parking?
+
+	//TOOD: Spacebar clicks the all tenants toggle?
 
 	//TODO: Sort placing services by need
 
