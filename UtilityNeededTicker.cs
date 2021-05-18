@@ -46,12 +46,13 @@ namespace BetterPlacement
 					GoToEntity();
 				});
 
-			UIUtil.GetButton(go, "Ok Button")?.gameObject.SetActive(value: false);
+			UIUtil.GetChild(go, "Ok Button").SetActive(false);
 		}
 
 		public override void ReleaseGameObject()
 		{
 			UIUtil.GetButton(go, "Close").onClick.RemoveAllListeners();
+			UIUtil.GetChild(go, "Text").GetComponent<UnityEngine.UI.Button>().onClick.RemoveAllListeners();
 		}
 
 		private void OnClose()
