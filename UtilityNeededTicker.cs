@@ -95,6 +95,24 @@ namespace BetterPlacement
 			//MakeIcon(warnings.First());
 		}
 
+
+		public static bool HasComplaint(NotifType type)
+		{
+			switch (type)
+			{
+				case NotifType.UnitUpset: 
+				case NotifType.TrashProblem: 
+				case NotifType.ServiceOverloaded: 
+				case NotifType.NeedConnPower: 
+				case NotifType.NeedConnPhone: 
+				case NotifType.NeedConnCable: 
+				case NotifType.NeedConnWater: 
+				case NotifType.NeedConnGas: 
+				case NotifType.NeedConnHVAC: 
+					return true;
+			}
+			return false;
+		}
 		public static string MakeComplaint(NotifType type)
 		{
 			switch(type)
@@ -175,6 +193,8 @@ namespace BetterPlacement
 		public static void Prefix(NotifComponent __instance, NotifType type)
 		{
 			if (__instance.IsAdded(type) || __instance.config.IsInhibited(type)) return;
+
+			if (!TickerEntryUtility.HasComplaint(type)) return;//Movein/not enough should be ignored as a popup.
 
 			UtilityTickerTracker.Add(__instance.entity.id, type);
 		}
