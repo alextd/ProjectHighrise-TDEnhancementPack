@@ -40,7 +40,7 @@ namespace BetterPlacement
 			var anchor = tr.anchoredPosition;
 			anchor.y /= 10;//move closer to top of screen
 			tr.anchoredPosition = anchor;
-			UIUtil.ForceRectSizeHack(____go, tr.rect.width, 950);
+			UIUtil.ForceRectSizeHack(____go, tr.rect.width, OverrideWindowHeight.h);
 		}
 	}
 	[HarmonyPatch(typeof(MoveInTenantsDialog), nameof(MoveInTenantsDialog.InitializeGameObject))]
