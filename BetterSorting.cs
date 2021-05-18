@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,6 +9,8 @@ using HarmonyLib;
 using Game.Session.Sim;
 using static Game.Session.Sim.PerformerRecord.UIState;
 using Game.UI.Session.Hotels;
+using Game.UI.Session.MoveIns;
+using Game.Services.Settings;
 
 namespace BetterPlacement
 {
@@ -61,5 +65,69 @@ namespace BetterPlacement
 
 			return false;
 		}
+	}
+
+	//I guess 3.5 has no tuple
+	public class TypeServiceDef
+	{
+		public bool running, needed, wanted;
+		public ServicesDefinitionDetail def;
+	}
+	public class TSDComparer : IComparer<TypeServiceDef>
+	{
+		public int Compare(TypeServiceDef a, TypeServiceDef b)
+		{
+			if (a.wanted && !b.wanted) return -1;
+			if (!a.wanted && b.wanted) return 1;
+			if (a.needed && !b.needed) return -1;
+			if (!a.needed && b.needed) return 1;
+			if (a.running && !b.running) return 1;
+			if (!a.running && b.running) return -1;
+			return 0;//Keep original sorting?
+		}
+	}
+
+	[HarmonyPatch(typeof(MoveInServicesDialog), nameof(MoveInServicesDialog.Refresh))]
+	public static class SortServicesByNeed
+	{
+		//private void Refresh()
+		public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator ilGen)
+		{
+			LocalBuilder tempListLB = ilGen.DeclareLocal(typeof(List<ServicesDefinitionDetail>));
+
+			FieldInfo entriesInfo = AccessTools.Field(typeof(ServicesDefinition), nameof(ServicesDefinition.entries));
+
+			foreach(var inst in instructions)
+			{
+				yield return inst;
+				if(inst.LoadsField(entriesInfo))
+				{
+					//entries
+					yield return new CodeInstruction(OpCodes.Ldloca, tempListLB);//entries, ref sorted
+					yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(SortServicesByNeed), nameof(SortItFFS)));//SortITFFS(entries, ref sorted) => sorted
+				}
+			}
+		}
+
+		public static List<ServicesDefinitionDetail> SortItFFS(List<ServicesDefinitionDetail> list, ref List<ServicesDefinitionDetail> sorted)
+		{
+			if (sorted != null)
+				return sorted;
+			List<TypeServiceDef> keyedList = new List<TypeServiceDef>();
+			foreach(ServicesDefinitionDetail def in list)
+			{
+				SupportTaskType supportTaskType = Game.Game.ctx.sim.support.FindSingleSupportTaskProvidedByService(Game.Game.ctx.entityman.FindTemplate(def.template));
+
+				bool running = Game.Game.ctx.sim.support.IsServiceUnitAvailable(supportTaskType);
+				bool needed = Game.Game.ctx.sim.support.IsServiceNeededAndTimedOut(supportTaskType, yesterday: true, today: true);
+				bool wanted = Game.Game.ctx.entityman.MakeListOfAllUnits().Any(e => e.components.unit.DoesNeedService(supportTaskType));
+
+				keyedList.Add(new TypeServiceDef() { running = running, needed = needed, wanted = wanted,def = def });
+			}
+
+			sorted = new List<ServicesDefinitionDetail>(keyedList.OrderBy(x => x, new TSDComparer()).Select(t => t.def));
+			return sorted;
+		}
+
 	}
 }
