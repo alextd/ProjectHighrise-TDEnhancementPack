@@ -33,11 +33,8 @@ namespace BetterPlacement
 		public static void Warning(object data) => logger.LogWarning(data);
 	}
 
-	//TODO: Hotel pickings.
-	// Notif when booking available.
-	// Auto select room to use.
-
 	//TODO: shift-place vertical things up = elevator, util cabinet
+	//TODO: shift-click floor
 
 	//TODO hotkeys for build menus.
 
@@ -46,6 +43,7 @@ namespace BetterPlacement
 	//TOOD: Spacebar clicks the all tenants toggle?
 
 	//TODO: Sort placing services by need
+	//TODO: Button to draw utils to entity as needed.
 
 	//TODO: Plan ahead, build over construction floors + rubble
 	//TODO: Build and flace floors
@@ -53,6 +51,7 @@ namespace BetterPlacement
 
 	//TODO: Actual loan interest
 
+	//TODO: Smarter services taking closest request
 	//TODO: interupt people going to office with tasks (builders leaving constructed floors not building the thing you placed right on top of them)
 
 	//TODO: Track time for seated people in ServiceComponent after load

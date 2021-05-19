@@ -21,7 +21,7 @@ namespace BetterPlacement
 		{
 			while(Game.Game.ctx.sim.eventspaces.data.performers.FirstOrDefault(r => r.CanBeBooked()) is PerformerRecord rec)
 			{
-				Log.Debug($"Bookable : {rec.name}");
+				//Log.Debug($"Bookable : {rec.name}");
 				BookIt(rec);
 			}
 		}
@@ -39,7 +39,7 @@ namespace BetterPlacement
 						{
 							Game.Game.ctx.sim.eventspaces.BookPerformerAndAssignToRoom(rec, room);
 							//Game.Game.serv.audio.PlayUISFX((!rec.def.IsEntertainer()) ? UIEffectType.BookBusinessEvent : UIEffectType.BookMusicEvent);
-							Log.Debug($"Assigned {rec.name} to {room}:{room.id}");
+							//Log.Debug($"Assigned {rec.name} to {room}:{room.id}");
 
 							return;
 						}
@@ -49,11 +49,13 @@ namespace BetterPlacement
 		}
 	}
 
-	//shift-click the ticker
+	//DONE: shift-click the ticker
 
 	//shift-click on performer list, book all of current type
 
-	//auto select a room
+	//shift-click a performer
+
+	//auto select a room on popup
 
 	//add 'auto-book' checkbox on I guess the event setup service?
 }
