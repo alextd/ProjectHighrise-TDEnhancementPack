@@ -27,7 +27,7 @@ namespace BetterPlacement
 			return new WholeFloorSize() { success = b };
 		}
 
-		public int Count() => (right.x - left.x + 1) / width;
+		public int Count() => ((vertical? (right.y - left.y):(right.x - left.x)) + 1) / width;
 	}
 	[HarmonyPatch(typeof(AbstractPaintInputMode), "TryPaint")]
 	public static class PaintWholeFloor
