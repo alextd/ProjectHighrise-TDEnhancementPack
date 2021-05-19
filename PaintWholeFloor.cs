@@ -52,6 +52,14 @@ namespace BetterPlacement
 					return false;
 				}
 			}
+			else if (__instance is AddFloorInputMode floorMode)
+			{
+				if (KeyboardShortcutManager.shift)
+				{
+					floorMode.TryPaintWholeFloor(dragging);
+					return false;
+				}
+			}
 			return true;
 		}
 
@@ -172,8 +180,6 @@ namespace BetterPlacement
 			int width = wholeFloor.width;
 			Game.Game.ctx.sim.player.DoAdd(buyMode.GetBuyCost() * numPossible, Reason.BuildCost, (GridPosF)buyMode._cursorpos);
 
-			GridPos cursorPos = buyMode._cursorpos;//The left side of the mouse-placement unit. Good enough to use.
-
 			if (wholeFloor.vertical)
 			{
 				if (wholeFloor.startLeft)
@@ -254,6 +260,91 @@ namespace BetterPlacement
 		}
 		//ShouldShowPositiveCursor check shift for whole floor
 		*/
+
+
+		//--------------------
+		//		FLOORS
+		//--------------------
+
+		public static void TryPaintWholeFloor(this AddFloorInputMode floorMode, bool dragging)
+		{
+			Log.Debug($"trying whole floor for {floorMode}:{floorMode.cursorTemplateName}");
+			//Basically a copy of the same from AddPipeInputMode: protected void TryPaintWholeFloor(bool dragging)
+
+			floorMode._successful = true;
+
+			if (!floorMode._isDown || GUIUtility.hotControl != 0 || !floorMode.CanPaint())
+				floorMode._successful = false;
+			else
+			{
+				floorMode.FindWholeFloor(out GridPos left, out GridPos right);
+
+				if (floorMode.CanPayWholeFloor(right.x - left.x + 1))
+				{
+
+					floorMode.UpdateCursor();
+					floorMode.PayAndPaintWholeFloor(left, right);//CreateCursor sets _successful = false
+					floorMode._paintcount++;
+				}
+				else
+				{
+					floorMode._lastPlacementPos = floorMode._cursorpos;
+					floorMode._thisMovementSucceeded = true;
+					floorMode._successful = false;
+				}
+			}
+
+			if (!floorMode._successful)
+			{
+				floorMode.OnFailedPaint(dragging);
+			}
+			if (!dragging)
+			{
+				floorMode._mouseoverStarted = false;
+			}
+		}
+		public static bool IsBuildable(this AddFloorInputMode floorMode, GridPos pos) => 
+			floorMode._grid.IsGridPosValid(pos) && floorMode._grid.CanAddFloor(pos, floorMode._floortemplate, out bool dummy);
+
+		public static void FindWholeFloor(this AddFloorInputMode floorMode, out GridPos left, out GridPos right)
+		{
+			left = floorMode._cursorpos; right = left;
+			while (floorMode.IsBuildable(left))
+				left.x--;
+			while (floorMode.IsBuildable(right))
+				right.x++;
+			left.x++; right.x--;
+		}
+		public static bool CanPayWholeFloor(this AddFloorInputMode floorMode, int count)
+		{
+			return Game.Game.ctx.sim.player.CanSpend(floorMode.GetBuildCostAtCursor() * count);
+		}
+
+		public static void PayAndPaintWholeFloor(this AddFloorInputMode floorMode, GridPos left, GridPos right)
+		{
+			GridPos gridpos = floorMode._cursor.data.placement.gridpos;
+			Game.Game.ctx.sim.player.DoAdd(floorMode.GetBuildCostAtCursor() * (right.x - left.x + 1), Reason.BuildCost, (GridPosF)gridpos);
+
+
+			for (GridPos buildPos = left; buildPos.x <= right.x; buildPos.x += 1)
+				floorMode.PaintOne(buildPos);
+
+			floorMode.UpdateCursor();
+			floorMode.PlayPaintSound(success: true);
+		}
+		public static void PaintOne(this AddFloorInputMode floorMode, GridPos gridpos)
+		{
+			floorMode._grid.AddFloor(gridpos, instant: false, floorMode._ft);
+			if (floorMode._ft == FloorType.Skybridge)
+			{
+				GridCell gridCell = Game.Game.ctx.board.grid.FindGridCellOrNull(gridpos.Add(2, 0));
+				if (gridCell != null)
+				{
+					Game. Game.ctx.board.grid.UpdateWall(gridCell, checkNeighbors: false);
+				}
+			}
+		}
 	}
+
 }
 
