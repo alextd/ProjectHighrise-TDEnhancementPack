@@ -32,8 +32,7 @@ namespace BetterPlacement
 			UIUtil.GetTextMesh(go, "Icon").color = Color.green;
 			UIUtil.GetTextMesh(go, "Text").text = "There are bookable performers";
 
-			go.GetComponent<UnityEngine.UI.Button>()
-				.onClick.AddListener(() => Game.Game.serv.dialogs.AddPopup(new Game.UI.Session.Hotels.PerformerListPopup()));
+			go.GetComponent<Button>().onClick.AddListener(() => Game.Game.serv.dialogs.AddPopup(new Game.UI.Session.Hotels.PerformerListPopup()));
 
 			UIUtil.GetChild(go, "Close").SetActive(false);
 			UIUtil.GetChild(go, "Ok Button").SetActive(false);
@@ -41,8 +40,7 @@ namespace BetterPlacement
 
 		public override void ReleaseGameObject()
 		{
-			UIUtil.GetButton(go, "Close").onClick.RemoveAllListeners();
-			UIUtil.GetChild(go, "Text").GetComponent<UnityEngine.UI.Button>().onClick.RemoveAllListeners();
+			go.GetComponent<Button>().onClick.RemoveAllListeners();
 		}
 
 		private void OnClose()

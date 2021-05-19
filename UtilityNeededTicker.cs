@@ -40,8 +40,7 @@ namespace BetterPlacement
 			UIUtil.GetTextMesh(go, "Text").text = "Utilities Needed";
 			//UIUtil.GetTextMesh(go, "Icon").text = Loc.Get(iconkey);
 
-			go.GetComponent<UnityEngine.UI.Button>()
-				.onClick.AddListener(() => GoToEntity());
+			go.GetComponent<Button>().onClick.AddListener(() => GoToEntity());
 
 			UIUtil.GetChild(go, "Ok Button").SetActive(false);
 		}
@@ -49,7 +48,7 @@ namespace BetterPlacement
 		public override void ReleaseGameObject()
 		{
 			UIUtil.GetButton(go, "Close").onClick.RemoveAllListeners();
-			UIUtil.GetChild(go, "Text").GetComponent<UnityEngine.UI.Button>().onClick.RemoveAllListeners();
+			go.GetComponent<Button>().onClick.RemoveAllListeners();
 		}
 
 		private void OnClose()
