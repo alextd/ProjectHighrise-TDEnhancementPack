@@ -5,6 +5,7 @@ using System.Text;
 
 using HarmonyLib;
 using Game.Session.Sim;
+using Game.Session.Entities;
 using Game.UI.Session.HUD;
 using Game.Util;
 using Game.Services;
@@ -32,7 +33,13 @@ namespace BetterPlacement
 			UIUtil.GetTextMesh(go, "Icon").color = Color.green;
 			UIUtil.GetTextMesh(go, "Text").text = "There are bookable performers";
 
-			go.GetComponent<Button>().onClick.AddListener(() => Game.Game.serv.dialogs.AddPopup(new Game.UI.Session.Hotels.PerformerListPopup()));
+			go.GetComponent<Button>().onClick.AddListener(() =>
+			{
+				if (KeyboardShortcutManager.shift)
+					BookAllPerformers.DoBookAll();
+				else
+					Game.Game.serv.dialogs.AddPopup(new Game.UI.Session.Hotels.PerformerListPopup()); 
+			});
 
 			UIUtil.GetChild(go, "Close").SetActive(false);
 			UIUtil.GetChild(go, "Ok Button").SetActive(false);
