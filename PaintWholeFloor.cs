@@ -24,16 +24,16 @@ namespace BetterPlacement
 
 		public static implicit operator WholeFloorSize(bool b)
 		{
-			return new WholeFloorSize() { success = b};
+			return new WholeFloorSize() { success = b };
 		}
 
-		public int Count() => (right.x - left.x + 1)/width;
+		public int Count() => (right.x - left.x + 1) / width;
 	}
 	[HarmonyPatch(typeof(AbstractPaintInputMode), "TryPaint")]
 	public static class PaintWholeFloor
 	{
 		//class AbstractPaintInputMode
-		//protected override void DoMouseUp(Vector2 scrpos, bool wasDragging)
+		//protected void TryPaint(bool dragging)
 		public static bool Prefix(AbstractPaintInputMode __instance, bool dragging)
 		{
 			if (__instance is BuyEntityInputMode buyMode && !(buyMode is MoveInUnitInputMode))
@@ -41,6 +41,14 @@ namespace BetterPlacement
 				if (KeyboardShortcutManager.shift)
 				{
 					TryPaintWholeFloor(buyMode, dragging: dragging);
+					return false;
+				}
+			}
+			else if (__instance is AddPipeInputMode pipeMode)
+			{
+				if (KeyboardShortcutManager.shift)
+				{
+					pipeMode.TryPaintWholeFloor(dragging);
 					return false;
 				}
 			}
@@ -60,7 +68,7 @@ namespace BetterPlacement
 			if (!floorSize.success)
 				buyMode._successful = false;
 
-			if(!buyMode.CanPayWholeFloor(floorSize))
+			if (!buyMode.CanPayWholeFloor(floorSize))
 				buyMode._successful = false;
 
 			if (buyMode._successful)
@@ -123,7 +131,7 @@ namespace BetterPlacement
 
 			if (result.Count() == 0)
 				return false;
-			
+
 			return result;
 		}
 
@@ -147,11 +155,11 @@ namespace BetterPlacement
 		}
 		private static GridPos FindEnd(this BuyEntityInputMode buyMode, GridPos start, int dx, bool vertical = false)
 		{
-			GridPos end,gridPos = start;
+			GridPos end, gridPos = start;
 			do
 			{
 				end = gridPos;
-				gridPos = end.Add(vertical?0:dx, vertical?dx:0);
+				gridPos = end.Add(vertical ? 0 : dx, vertical ? dx : 0);
 			}
 			while (buyMode.IsBuildable(gridPos));
 			return end;
@@ -172,16 +180,16 @@ namespace BetterPlacement
 					for (GridPos buildPos = wholeFloor.left; buildPos.y + width - 1 <= wholeFloor.right.y; buildPos.y += width)
 						buyMode.PaintOne(buildPos);
 				else
-					for (GridPos buildPos = wholeFloor.right.Add(0, 1- width); buildPos.y >= wholeFloor.left.y; buildPos.y -= width)
+					for (GridPos buildPos = wholeFloor.right.Add(0, 1 - width); buildPos.y >= wholeFloor.left.y; buildPos.y -= width)
 						buyMode.PaintOne(buildPos);
 			}
 			else
 			{
 				if (wholeFloor.startLeft)
-					for (GridPos buildPos = wholeFloor.left ; buildPos.x + width - 1 <= wholeFloor.right.x; buildPos.x += width)
+					for (GridPos buildPos = wholeFloor.left; buildPos.x + width - 1 <= wholeFloor.right.x; buildPos.x += width)
 						buyMode.PaintOne(buildPos);
 				else
-					for (GridPos buildPos = wholeFloor.right.Add(1-width,0); buildPos.x >= wholeFloor.left.x; buildPos.x -= width)
+					for (GridPos buildPos = wholeFloor.right.Add(1 - width, 0); buildPos.x >= wholeFloor.left.x; buildPos.x -= width)
 						buyMode.PaintOne(buildPos);
 			}
 
@@ -248,5 +256,4 @@ namespace BetterPlacement
 		*/
 	}
 }
-
 
