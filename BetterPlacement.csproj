@@ -87,6 +87,7 @@
     <Compile Include="CantSelectInvisible.cs" />
     <Compile Include="DialogSizes.cs" />
     <Compile Include="EverythingIsPaintable.cs" />
+    <Compile Include="MoreKeyboardCommands.cs" />
     <Compile Include="PaintWholeFloor.cs" />
     <Compile Include="PauseAfterLoad.cs" />
     <Compile Include="PerformerBookableTicker.cs" />
