@@ -33,14 +33,12 @@ namespace BetterPlacement
 		public static void Warning(object data) => logger.LogWarning(data);
 	}
 
-	//TODO: shift-place vertical things up = elevator, util cabinet
-	//TODO: shift-click floor
-
 	//TODO hotkeys for build menus.
 
 	//TODO: Check move in all parking?
 
 	//TOOD: Spacebar clicks the all tenants toggle?
+	//TODO: preventative maintenance on elevators
 
 	//TODO: Sort placing services by need
 	//TODO: Button to draw utils to entity as needed.

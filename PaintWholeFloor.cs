@@ -117,7 +117,6 @@ namespace BetterPlacement
 			WholeFloorSize result = true;
 
 			result.vertical = VerticalFilling(buyMode._cursor);
-			Log.Debug($"Vertical : {result.vertical} for {buyMode._cursor.config.ident.name}");
 			result.left = buyMode.FindEnd(buyMode._cursorpos, -1, result.vertical);
 			result.right = buyMode.FindEnd(buyMode._cursorpos, 1, result.vertical);
 			if (result.vertical)
@@ -268,7 +267,6 @@ namespace BetterPlacement
 
 		public static void TryPaintWholeFloor(this AddFloorInputMode floorMode, bool dragging)
 		{
-			Log.Debug($"trying whole floor for {floorMode}:{floorMode.cursorTemplateName}");
 			//Basically a copy of the same from AddPipeInputMode: protected void TryPaintWholeFloor(bool dragging)
 
 			floorMode._successful = true;
@@ -306,6 +304,9 @@ namespace BetterPlacement
 		public static bool IsBuildable(this AddFloorInputMode floorMode, GridPos pos) => 
 			floorMode._grid.IsGridPosValid(pos) && floorMode._grid.CanAddFloor(pos, floorMode._floortemplate, out bool dummy);
 
+		//The check for skybridges being valid is deep in layers, and it's beside the lot boundaries,
+		//so we're not gonna be able to shift-place skybridges since 2 floors out will seem invalid. 
+		//Unless I change the entire system to just build as much as it can without worrying about price or planning.
 		public static void FindWholeFloor(this AddFloorInputMode floorMode, out GridPos left, out GridPos right)
 		{
 			left = floorMode._cursorpos; right = left;
