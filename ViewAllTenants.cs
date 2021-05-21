@@ -14,6 +14,7 @@ using Game.Services;
 using Game.Util;
 
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace BetterPlacement
 {
@@ -91,9 +92,13 @@ namespace BetterPlacement
 		//protected override void InitializeGameObject()
 		public static void Prefix(MoveInTenantsDialog __instance, GameObject ____go)
 		{
-			UIUtil.GetChild(____go, "Title")
-				.AddComponent<UnityEngine.UI.Button>()
-				.onClick.AddListener(delegate () { 
+			Button toggleButton = UIUtil.GetChild(____go, "Title")
+				.AddComponent<UnityEngine.UI.Button>();
+			var n = toggleButton.navigation;
+			n.mode = Navigation.Mode.None;//Don't focus after clicking, which would mean spacebar clicks it ? okay.
+			toggleButton.navigation = n;//there has to be a better way :/
+
+			toggleButton.onClick.AddListener(delegate () { 
 				doViewAll = !doViewAll;
 				__instance.RefreshTenantList();
 			}) ;
