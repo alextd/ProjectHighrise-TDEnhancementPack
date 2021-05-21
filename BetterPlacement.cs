@@ -33,24 +33,22 @@ namespace BetterPlacement
 		public static void Warning(object data) => logger.LogWarning(data);
 	}
 
-	//TODO: preventative maintenance on elevators
-
-	//TODO: Sort placing services by need
-	//TODO: Button to draw utils to entity as needed.
-
-	//TODO: Plan ahead, build over construction floors + rubble
-	//TODO: Build and flace floors
-	//TODO: Measure # of cells
-
-	//TODO: Actual loan interest
-
-	//TODO: Smarter services taking closest request
-	//TODO: interupt people going to office with tasks (builders leaving constructed floors not building the thing you placed right on top of them)
-
+	//BETTER:
 	//TODO: Track time for seated people in ServiceComponent after load
 
+	//UI IMPROVEMENTS:
+	//TODO: Measure # of cells
 	//TODO: POpup/pause on no service warning.
+	//TODO: Ability to view ad list without emptyspace
+	//TODO: Util view shows who needs what
 
-	//TODO: Ability to view ad list without a building
+	//NEW GAME FEATURES:
+
+	//TODO: Button to draw utils to entity as needed.
+	//TODO: Plan ahead - build over construction floors + rubble, place floors as needed
+	//TODO: Actual loan interest
+	//TODO: Smarter services taking closest request
+	//TODO: interupt people going to office with tasks (builders leaving constructed floors not building the thing you placed right on top of them)
+	//TODO: preventative maintenance on elevators
 }
 
