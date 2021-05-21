@@ -33,8 +33,6 @@ namespace BetterPlacement
 		public static void Warning(object data) => logger.LogWarning(data);
 	}
 
-	//TODO: Check move in all parking?
-
 	//TOOD: Spacebar clicks the all tenants toggle?
 	//TODO: preventative maintenance on elevators
 

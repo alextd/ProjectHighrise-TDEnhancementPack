@@ -93,7 +93,7 @@ namespace BetterPlacement
 					}
 				}
 
-				//This might be dangerously close to PerformMoveIn. Thought it would change more. Basically need to not audio.PlayUISFX so much.
+				//This next chunk might be dangerously close to PerformMoveIn. Thought it would change more. Basically need to not audio.PlayUISFX so much.
 				if (!manager.CanMoveIn(unit, emptyspace))
 				{
 					break;//TODO: Warning.
@@ -152,6 +152,20 @@ namespace BetterPlacement
 			}
 
 			return false;
+		}
+	}
+
+	//Docks (e.g. parking) are refreshed on update, not when actions are performed? Okay. Okay, well. Okay, I'll just call it here.
+	//This legit fixes a bug in the game, where you could move in tenants over the dock limit - so long as you're paused, because docks aren't updated until a clock tick.
+	//I assumed it was a problem I created, since I move in things all in one action... no, it was all in one clock tick. Geez.
+	[HarmonyPatch(typeof(EntityManager), nameof(EntityManager.AddToStorage))]
+	public static class UpdateDocks
+	{
+		//private void AddToStorage(int id, Entity e)
+		public static void Postfix(Entity e)
+		{
+			if (e.config.dock?.action == DockConfig.Action.Consumes)
+				Game.Game.ctx.sim.biz.docks.RefreshLoadingDocks(e.config.dock.type);
 		}
 	}
 
