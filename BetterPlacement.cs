@@ -41,6 +41,7 @@ namespace BetterPlacement
 	//TODO: POpup/pause on no service warning.
 	//TODO: Ability to view ad list without emptyspace
 	//TODO: Util view shows who needs what
+	//TODO: Show util usage # when placing wires
 
 	//NEW GAME FEATURES:
 
