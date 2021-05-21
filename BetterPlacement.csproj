@@ -81,6 +81,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AllowRelocateDockConsumer.cs" />
     <Compile Include="BetterPlacement.cs" />
     <Compile Include="BetterSorting.cs" />
     <Compile Include="BookAllPerformers.cs" />
