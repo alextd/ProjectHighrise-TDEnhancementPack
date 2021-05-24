@@ -33,10 +33,15 @@ namespace BetterPlacement
 		public static void Warning(object data) => logger.LogWarning(data);
 	}
 
+	//FIX
+	//TODO: Build whole floor going over 2k limit
+
 	//BETTER:
 	//TODO: Track time for seated people in ServiceComponent after load
+	//TODO: Place whole floor from floor outward so it builds in that direction
 
 	//UI IMPROVEMENTS:
+	//TODO: Autosave and quit popup
 	//TODO: Measure # of cells
 	//TODO: POpup/pause on no service warning.
 	//TODO: Ability to view ad list without emptyspace
@@ -45,11 +50,14 @@ namespace BetterPlacement
 
 	//NEW GAME FEATURES:
 
-	//TODO: Button to draw utils to entity as needed.
+	//TODO: Workers re-try tasks that were unpathable - e.g. new floors, all cells tried before elevator was built are pushed to end of queue
+	//TODO: Button to buy utils to entity as needed.
 	//TODO: Plan ahead - build over construction floors + rubble, place floors as needed
 	//TODO: Actual loan interest
 	//TODO: Smarter services taking closest request
 	//TODO: interupt people going to office with tasks (builders leaving constructed floors not building the thing you placed right on top of them)
 	//TODO: preventative maintenance on elevators
+	//TODO: Moveouts don't require re-build. Why would someone leaving an apartment mean it has to be rebuit
+	//TODO: unocupied apartments don't consume utilites, etc
 }
 
