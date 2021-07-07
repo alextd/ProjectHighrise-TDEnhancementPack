@@ -62,7 +62,7 @@ You should re-bind Pause/Game speed keys since Keyboard commands feature uses nu
 - Fixed bug where you could move in tenants over parking spot limit when paused
 
 
-##To develop code (after BepInEx installed): #
+# To develop code (after BepInEx installed): #
 1. Point to Steam folder (for Project Highrise installation path)
   - Edit SteamDir.user file. 
   - This file should not be commited back into the repo.
