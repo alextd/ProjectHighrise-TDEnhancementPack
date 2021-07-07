@@ -43,12 +43,12 @@ You should re-bind Pause/Game speed keys since Keyboard commands feature uses nu
   - TODO: People dining at restaurants isn't perfect - their timer is reset on load (since that info is stored outside the person and linked to them via a callback function which is hard to save to file)
 
 ### Notification popups ###
-- Complaints, missing power, etc, show up immediately as a notifiation. Click to zoom to problem.
+- Complaints, missing power, etc, show up immediately as a notification. Click to zoom to problem.
 - Bookable performers at hotels shows a notification. Shift-click the notification to auto-book.
 
 ### Sorting ###
 - Services sort by need and if you have them already
-- Peformers sort by availability
+- Performers sort by availability
 
 ### Little things: ###
 - Various dialogs are bigger, and scroll faster (I assume you have a 1080p+ screen)
