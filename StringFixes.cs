@@ -6,7 +6,7 @@ using System.Text;
 using HarmonyLib;
 using Game.Services;
 
-namespace BetterPlacement
+namespace TDEnhancementPack
 {
 	[HarmonyPatch(typeof(LocalizationService), nameof(LocalizationService.GetValue), typeof(string), typeof(SomaSim.Math.IRandom), typeof(object[]))]
 	public static class StringFixes

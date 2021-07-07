@@ -11,7 +11,7 @@ using Game.Services.Settings;
 
 //Okay this one is technically a game design choice but why do IT services go sit in their office for 1.5 hours instead of working like every other service?
 //They go to lunch anyway so that's their break time
-namespace BetterPlacement
+namespace TDEnhancementPack
 {
   [HarmonyPatch(typeof(GlobalSettingsService), nameof(GlobalSettingsService.OnSettingsLoaded))]
 	public static class ScheduleFixer

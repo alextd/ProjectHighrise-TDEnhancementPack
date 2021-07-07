@@ -11,7 +11,7 @@ using Game.Session.Entities.Config;
 
 //Everything is drag-paintable. Also remove the error sound when dragging.
 
-namespace BetterPlacement
+namespace TDEnhancementPack
 {
 	//ignore _cursor.config.placement.paint. This simply allows things to be drag-painted via DoDragMove
 	[HarmonyPatch(typeof(AbstractPaintInputMode), "DoDragMove")]

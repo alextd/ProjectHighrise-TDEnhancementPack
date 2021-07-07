@@ -12,7 +12,7 @@ using Game.Services;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace BetterPlacement
+namespace TDEnhancementPack
 {
 
 	public class TickerEntryBookable : TickerEntry

@@ -9,7 +9,7 @@ using Game.Session.Board;
 using Game.Services;
 using UnityEngine;
 
-namespace BetterPlacement
+namespace TDEnhancementPack
 {
 	//------------------
 	//Stack zoom requests

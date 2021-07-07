@@ -9,7 +9,7 @@ using HarmonyLib;
 using Game.Session.Board;
 using Game.Session.Entities;
 
-namespace BetterPlacement
+namespace TDEnhancementPack
 {
 	[HarmonyPatch(typeof(PeepTracker), nameof(PeepTracker.FindPeepUnderCursor))]
 	public static class CantSelectInvisible

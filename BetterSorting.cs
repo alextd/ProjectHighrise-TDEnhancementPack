@@ -12,7 +12,7 @@ using Game.UI.Session.Hotels;
 using Game.UI.Session.MoveIns;
 using Game.Services.Settings;
 
-namespace BetterPlacement
+namespace TDEnhancementPack
 {
 	//Performer sorting. It was sorted in two places? Let's do one.
 	[HarmonyPatch(typeof(PerformerRecord), nameof(PerformerRecord.SortByBookedThenCashCost))]

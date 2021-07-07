@@ -10,7 +10,7 @@ using Game.Session.Input;
 using Game.Session.Entities.Config;
 using Game.Systems.Requirements;
 
-namespace BetterPlacement
+namespace TDEnhancementPack
 {
 	//relocating e.g. a store when you're at max storage capacity isn't allowed because you can't add more stores, you're at max capacity!! Uh huh.
 	[HarmonyPatch(typeof(RelocateEntityInputMode), nameof(RelocateEntityInputMode.CanPaint))]

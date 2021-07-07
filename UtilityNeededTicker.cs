@@ -15,7 +15,7 @@ using Game.Session.Board;
 using Game.Session.Sim;
 using Game.Services;
 
-namespace BetterPlacement
+namespace TDEnhancementPack
 {
 	public class TickerEntryUtility : TickerEntry
 	{

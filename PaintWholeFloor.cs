@@ -16,7 +16,7 @@ using Game.Systems.Events;
 
 //Paint Whole Floor was implemented for wires, why not all rooms?
 
-namespace BetterPlacement
+namespace TDEnhancementPack
 {
 	public struct WholeFloorSize
 	{

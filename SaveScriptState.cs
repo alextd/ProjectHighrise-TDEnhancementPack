@@ -22,7 +22,7 @@ using SomaSim.Serializer;
 using Game.AI;
 using Game.AI.Actions;
 
-namespace BetterPlacement
+namespace TDEnhancementPack
 {
 	//People would go to their office when the game was loaded.
 	//This was because they thought they weren't in the building

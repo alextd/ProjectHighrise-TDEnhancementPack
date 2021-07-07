@@ -13,7 +13,7 @@ using Game.Services;
 using Game.Components;
 using UnityEngine;
 
-namespace BetterPlacement
+namespace TDEnhancementPack
 {
 	//Okay. So. Spawning in someone doesn't enable the renderer.
 	//Loading someone doesn't enable the renderer.

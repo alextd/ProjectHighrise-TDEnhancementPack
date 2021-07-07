@@ -13,7 +13,7 @@ using Game.Session.Sim;
 using Game.Session.Entities;
 using Assets.Code.Music;
 
-namespace BetterPlacement
+namespace TDEnhancementPack
 {
 	public static class BookAllPerformers
 	{

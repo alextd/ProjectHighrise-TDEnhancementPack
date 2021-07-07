@@ -12,7 +12,7 @@ using Game.UI.Session.Hotels;
 using Game.Util;
 using UnityEngine;
 
-namespace BetterPlacement
+namespace TDEnhancementPack
 {
 	public static class OverrideWindowHeight
 	{

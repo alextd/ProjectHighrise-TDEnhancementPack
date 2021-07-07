@@ -17,7 +17,7 @@ using Game.Systems.Events;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace BetterPlacement
+namespace TDEnhancementPack
 {
 	[HarmonyPatch(typeof(UIUtil), nameof(UIUtil.SetScrollRectElasticity), new Type[] { typeof(GameObject)})]
 	//public static void SetScrollRectElasticity(GameObject scrollView)

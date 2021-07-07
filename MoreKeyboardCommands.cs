@@ -16,7 +16,7 @@ using Game.UI.Session;
 using Assets.Code.Music;
 using static UnityEngine.KeyCode;
 
-namespace BetterPlacement
+namespace TDEnhancementPack
 {
 	[HarmonyPatch(typeof(KeyboardShortcutManager), nameof(KeyboardShortcutManager.Initialize))]
 	public static class FunctionKeyActions

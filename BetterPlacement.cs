@@ -7,10 +7,10 @@ using BepInEx.Logging;
 using HarmonyLib;
 using HarmonyLib.Tools;
 
-namespace BetterPlacement
+namespace TDEnhancementPack
 {
-	[BepInPlugin("TD.ProjectHighrise.BetterPlacement.main", "Better Placement", "0.1.0.0")]
-	public class BetterPlacement : BaseUnityPlugin
+	[BepInPlugin("TD.ProjectHighrise.TDEnhancementPack.main", "TD Enhancement Pack", "1.0.0.0")]
+	public class TDEnhancementPack : BaseUnityPlugin
 	{
 		// Awake is called once when both the game and the plug-in are loaded
 		void Awake()
@@ -20,7 +20,7 @@ namespace BetterPlacement
 			HarmonyFileLog.Enabled = true;
 #endif
 			Log.Message($"Wake up! Time is: {DateTime.Now}");
-			new Harmony("TD.ProjectHighrise.BetterPlacement.main").PatchAll();
+			new Harmony("TD.ProjectHighrise.TDEnhancementPack.main").PatchAll();
 		}
 	}
 

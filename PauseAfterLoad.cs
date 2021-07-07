@@ -7,7 +7,7 @@ using HarmonyLib;
 using Game.Session.Sim;
 using Game.UI.Session;
 
-namespace BetterPlacement
+namespace TDEnhancementPack
 {
 	[HarmonyPatch(typeof(GameClock), nameof(GameClock.Initialize))]
 	public static class PauseAfterLoad

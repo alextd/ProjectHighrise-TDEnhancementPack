@@ -16,7 +16,7 @@ using Game.Util;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace BetterPlacement
+namespace TDEnhancementPack
 {
 	//View all tenants for all ads, not just one tenant type
 	// Rewrite RefreshTenantList for 'all' - toggle on/off somewhere.
