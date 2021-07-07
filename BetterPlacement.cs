@@ -59,5 +59,6 @@ namespace BetterPlacement
 	//TODO: preventative maintenance on elevators
 	//TODO: Moveouts don't require re-build. Why would someone leaving an apartment mean it has to be rebuit
 	//TODO: unocupied apartments don't consume utilites, etc
+	//TODO: Refuse contracts (e.g. no offices)
 }
 
