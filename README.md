@@ -1,6 +1,8 @@
 # ProjectHighrise - TD Enhancement Pack
 A mod for Project Highrise that makes placing rooms easier - Also various other fixes I discovered were needed.
 
+Should you use this mod? Check out the [trailer](https://streamable.com/dtqnzh) (aka. a tiny demo I made). Answer: Yes. Absolutely. Without question.
+
 
 ## To install: ##
 1.
